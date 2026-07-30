@@ -6,10 +6,12 @@ import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, limit, where } from 'firebase/firestore';
 import { Wallet, Map, CheckSquare, FileText, ArrowRight, TrendingUp, TrendingDown, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
 import { startOfDay, endOfDay } from 'date-fns';
+import FinanceChart from '@/components/FinanceChart';
 
 export default function Home() {
   const [balance, setBalance] = useState(0);
   const [todayExpense, setTodayExpense] = useState(0);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [activeProjects, setActiveProjects] = useState(0);
   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0 });
   const [recentNotes, setRecentNotes] = useState<any[]>([]);
@@ -23,9 +25,9 @@ export default function Home() {
       let expensesToday = 0;
       const start = startOfDay(new Date()).getTime();
       const end = endOfDay(new Date()).getTime();
+      const txs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
-      snapshot.docs.forEach(doc => {
-        const data = doc.data();
+      txs.forEach(data => {
         if (data.type === 'income') total += data.amount;
         if (data.type === 'expense') {
           total -= data.amount;
@@ -37,6 +39,7 @@ export default function Home() {
       });
       setBalance(total);
       setTodayExpense(expensesToday);
+      setTransactions(txs);
     });
 
     // Projects Listener
@@ -97,23 +100,20 @@ export default function Home() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Finance Card */}
-        <Link href="/finance" className="bg-darkcard border border-gray-800 rounded-3xl p-5 hover:border-gray-700 transition-all active:scale-[0.98] group">
-          <div className="flex justify-between items-start mb-6">
+        <div className="bg-darkcard border border-gray-800 rounded-3xl p-5 hover:border-gray-700 transition-all active:scale-[0.98] group flex flex-col">
+          <Link href="/finance" className="flex justify-between items-start mb-6">
             <div className="w-12 h-12 rounded-xl bg-neon/10 flex items-center justify-center">
               <Wallet className="w-6 h-6 text-neon" />
             </div>
             <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-neon transition-colors" />
-          </div>
+          </Link>
           <p className="text-gray-400 text-sm font-medium">Total Saldo</p>
-          <h2 className="text-3xl font-bold text-gray-100 mt-1 mb-4">Rp {balance.toLocaleString('id-ID')}</h2>
-          <div className="flex items-center gap-2 text-sm">
-            <div className="flex items-center gap-1 text-red-400 bg-red-400/10 px-2 py-1 rounded-md">
-              <TrendingDown className="w-4 h-4" />
-              <span>Rp {todayExpense.toLocaleString('id-ID')}</span>
-            </div>
-            <span className="text-gray-500">Pengeluaran hari ini</span>
+          <h2 className="text-3xl font-bold text-gray-100 mt-1 mb-6">Rp {balance.toLocaleString('id-ID')}</h2>
+          
+          <div className="-mx-2 flex-1">
+            <FinanceChart transactions={transactions} height={120} />
           </div>
-        </Link>
+        </div>
 
         {/* Projects & Tasks Combo */}
         <div className="flex flex-col gap-4">

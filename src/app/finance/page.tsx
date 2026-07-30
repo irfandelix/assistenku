@@ -8,6 +8,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { format, subDays, isSameDay } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
+import FinanceChart from '@/components/FinanceChart';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -151,33 +152,8 @@ export default function FinancePage() {
 
       {/* Weekly Expense Chart */}
       <div className="bg-darkcard border border-gray-800 p-5 rounded-3xl">
-        <h3 className="text-sm font-bold text-gray-200 mb-4">Grafik Pengeluaran (7 Hari)</h3>
-        <div className="flex items-end justify-between gap-2 h-32">
-          {chartData.map((d, i) => {
-            const height = Math.max((d.amount / maxExpense) * 100, 5); // min 5%
-            const isToday = i === 6;
-            return (
-              <div key={i} className="flex flex-col items-center gap-2 flex-1 group relative">
-                <div className="w-full relative flex justify-center items-end h-full">
-                  <div 
-                    className={cn(
-                      "w-full max-w-[2rem] rounded-md transition-all duration-500 group-hover:opacity-80", 
-                      isToday ? "bg-neon" : "bg-gray-700"
-                    )}
-                    style={{ height: `${height}%` }}
-                  />
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-xs text-white px-2 py-1 rounded whitespace-nowrap pointer-events-none">
-                    Rp {d.amount.toLocaleString('id-ID')}
-                  </div>
-                </div>
-                <span className={cn("text-[10px] font-medium uppercase tracking-wider", isToday ? "text-neon" : "text-gray-500")}>
-                  {d.day}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <h3 className="text-sm font-bold text-gray-200 mb-4">Grafik Pemasukan & Pengeluaran (7 Hari)</h3>
+        <FinanceChart transactions={transactions} height={180} />
       </div>
       
       {/* Huge CTA */}
