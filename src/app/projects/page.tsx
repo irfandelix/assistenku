@@ -14,7 +14,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentProject, setCurrentProject] = useState({ id: '', title: '', client: '', link: '', isPaid: false });
+  const [currentProject, setCurrentProject] = useState({ id: '', title: '', client: '', link: '', isPaid: false, amountPaid: '', financeSynced: false });
 
   useEffect(() => {
     const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
@@ -28,13 +28,30 @@ export default function ProjectsPage() {
   const handleSave = async () => {
     if (!currentProject.title.trim()) return;
     
+    let isNowSynced = currentProject.financeSynced;
+    
     try {
+      if (currentProject.isPaid && !currentProject.financeSynced && currentProject.amountPaid) {
+        const amountNum = parseFloat(currentProject.amountPaid);
+        if (!isNaN(amountNum) && amountNum > 0) {
+          await addDoc(collection(db, 'finance'), {
+            title: `Proyek: ${currentProject.title}`,
+            amount: amountNum,
+            type: 'income',
+            createdAt: serverTimestamp()
+          });
+          isNowSynced = true;
+        }
+      }
+
       if (currentProject.id) {
         await updateDoc(doc(db, 'projects', currentProject.id), {
           title: currentProject.title,
           client: currentProject.client,
           link: currentProject.link,
-          isPaid: currentProject.isPaid
+          isPaid: currentProject.isPaid,
+          amountPaid: currentProject.amountPaid,
+          financeSynced: isNowSynced
         });
       } else {
         await addDoc(collection(db, 'projects'), {
@@ -42,6 +59,8 @@ export default function ProjectsPage() {
           client: currentProject.client,
           link: currentProject.link,
           isPaid: currentProject.isPaid,
+          amountPaid: currentProject.amountPaid,
+          financeSynced: isNowSynced,
           createdAt: serverTimestamp()
         });
       }
@@ -63,13 +82,48 @@ export default function ProjectsPage() {
   };
 
   const toggleStatus = async (project: any) => {
-    await updateDoc(doc(db, 'projects', project.id), {
-      isPaid: !project.isPaid
-    });
+    let newIsPaid = !project.isPaid;
+    let newAmountPaid = project.amountPaid || '';
+    let newFinanceSynced = project.financeSynced || false;
+
+    if (newIsPaid && !newFinanceSynced) {
+      const amountStr = prompt(`Proyek "${project.title}" Lunas!\n\nMasukkan nominal pembayaran (Rp) untuk dikirim ke catatan Keuangan:`);
+      if (amountStr !== null && amountStr.trim() !== '') {
+        const amountNum = parseFloat(amountStr);
+        if (!isNaN(amountNum) && amountNum > 0) {
+          newAmountPaid = amountNum.toString();
+          try {
+            await addDoc(collection(db, 'finance'), {
+              title: `Proyek: ${project.title}`,
+              amount: amountNum,
+              type: 'income',
+              createdAt: serverTimestamp()
+            });
+            newFinanceSynced = true;
+          } catch (error: any) {
+            alert('Gagal mencatat ke Keuangan: ' + error.message);
+          }
+        }
+      }
+    }
+
+    try {
+      await updateDoc(doc(db, 'projects', project.id), {
+        isPaid: newIsPaid,
+        amountPaid: newAmountPaid,
+        financeSynced: newFinanceSynced
+      });
+    } catch (error: any) {
+      alert('Gagal mengubah status: ' + error.message);
+    }
   };
 
-  const openEditor = (project = { id: '', title: '', client: '', link: '', isPaid: false }) => {
-    setCurrentProject(project);
+  const openEditor = (project = { id: '', title: '', client: '', link: '', isPaid: false, amountPaid: '', financeSynced: false }) => {
+    setCurrentProject({
+      ...project,
+      amountPaid: project.amountPaid || '',
+      financeSynced: project.financeSynced || false
+    });
     setIsEditing(true);
   };
 
@@ -136,6 +190,27 @@ export default function ProjectsPage() {
                 />
                 <label htmlFor="isPaid" className="text-sm font-medium">Sudah Dibayar (Lunas)</label>
               </div>
+
+              {currentProject.isPaid && !currentProject.financeSynced && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-200 mt-4">
+                  <label className="block text-sm font-medium mb-1 text-emerald-600">Nominal Pembayaran (Rp)</label>
+                  <input 
+                    type="number"
+                    value={currentProject.amountPaid}
+                    onChange={e => setCurrentProject({...currentProject, amountPaid: e.target.value})}
+                    className="w-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-2 outline-none focus:border-emerald-500"
+                    placeholder="Contoh: 1500000"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Nominal ini akan otomatis masuk ke menu Keuangan Anda.</p>
+                </div>
+              )}
+              
+              {currentProject.isPaid && currentProject.financeSynced && (
+                <div className="p-3 mt-4 bg-gray-50 border border-gray-200 rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Pembayaran Lunas: Rp {parseFloat(currentProject.amountPaid || '0').toLocaleString('id-ID')}</p>
+                  <p className="text-xs text-gray-500 mt-1">✔️ Nominal ini telah dicatat otomatis ke menu Keuangan.</p>
+                </div>
+              )}
             </div>
             
             <div className="mt-8 flex justify-between items-center">
