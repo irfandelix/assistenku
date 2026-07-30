@@ -180,45 +180,47 @@ export default function ProjectsPage() {
                   placeholder="https://drive.google.com/..."
                 />
               </div>
-              {currentProject.link.trim() === '' ? (
-                <div className="bg-yellow-50 dark:bg-yellow-900/30 p-3 rounded-xl border border-yellow-200 dark:border-yellow-800/50 flex gap-3 mt-4">
-                  <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 shrink-0" />
-                  <p className="text-sm text-yellow-700 dark:text-yellow-400">Masukkan Link Google Drive proyek yang sudah selesai terlebih dahulu untuk membuka menu pelunasan.</p>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-                    <input 
-                      type="checkbox" 
-                      id="isPaid"
-                      checked={currentProject.isPaid}
-                      onChange={e => setCurrentProject({...currentProject, isPaid: e.target.checked})}
-                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
-                    />
-                    <label htmlFor="isPaid" className="text-sm font-medium">Sudah Dibayar (Lunas)</label>
+              {currentProject.id && (
+                currentProject.link.trim() === '' ? (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/30 p-3 rounded-xl border border-yellow-200 dark:border-yellow-800/50 flex gap-3 mt-4">
+                    <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 shrink-0" />
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400">Masukkan Link Google Drive proyek yang sudah selesai terlebih dahulu untuk membuka menu pelunasan.</p>
                   </div>
-
-                  {currentProject.isPaid && !currentProject.financeSynced && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-200 mt-4">
-                      <label className="block text-sm font-medium mb-1 text-emerald-600">Nominal Pembayaran (Rp)</label>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                       <input 
-                        type="number"
-                        value={currentProject.amountPaid}
-                        onChange={e => setCurrentProject({...currentProject, amountPaid: e.target.value})}
-                        className="w-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-2 outline-none focus:border-emerald-500"
-                        placeholder="Contoh: 1500000"
+                        type="checkbox" 
+                        id="isPaid"
+                        checked={currentProject.isPaid}
+                        onChange={e => setCurrentProject({...currentProject, isPaid: e.target.checked})}
+                        className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Nominal ini akan otomatis masuk ke menu Keuangan Anda.</p>
+                      <label htmlFor="isPaid" className="text-sm font-medium">Sudah Dibayar (Lunas)</label>
                     </div>
-                  )}
-                  
-                  {currentProject.isPaid && currentProject.financeSynced && (
-                    <div className="p-3 mt-4 bg-gray-50 border border-gray-200 rounded-xl dark:bg-gray-800 dark:border-gray-700">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Pembayaran Lunas: Rp {parseFloat(currentProject.amountPaid || '0').toLocaleString('id-ID')}</p>
-                      <p className="text-xs text-gray-500 mt-1">✔️ Nominal ini telah dicatat otomatis ke menu Keuangan.</p>
-                    </div>
-                  )}
-                </>
+
+                    {currentProject.isPaid && !currentProject.financeSynced && (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-200 mt-4">
+                        <label className="block text-sm font-medium mb-1 text-emerald-600">Nominal Pembayaran (Rp)</label>
+                        <input 
+                          type="number"
+                          value={currentProject.amountPaid}
+                          onChange={e => setCurrentProject({...currentProject, amountPaid: e.target.value})}
+                          className="w-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-2 outline-none focus:border-emerald-500"
+                          placeholder="Contoh: 1500000"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Nominal ini akan otomatis masuk ke menu Keuangan Anda.</p>
+                      </div>
+                    )}
+                    
+                    {currentProject.isPaid && currentProject.financeSynced && (
+                      <div className="p-3 mt-4 bg-gray-50 border border-gray-200 rounded-xl dark:bg-gray-800 dark:border-gray-700">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Pembayaran Lunas: Rp {parseFloat(currentProject.amountPaid || '0').toLocaleString('id-ID')}</p>
+                        <p className="text-xs text-gray-500 mt-1">✔️ Nominal ini telah dicatat otomatis ke menu Keuangan.</p>
+                      </div>
+                    )}
+                  </>
+                )
               )}
             </div>
             
