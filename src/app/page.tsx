@@ -87,7 +87,7 @@ export default function Home() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <header className="pt-2 flex justify-between items-center">
         <div>
-          <p className="text-neon font-medium text-sm tracking-widest uppercase mb-1">D Checklist</p>
+          <p className="text-neon font-medium text-sm tracking-widest uppercase mb-1">Informasi</p>
           <h1 className="text-3xl font-bold text-gray-100 tracking-tight">Delix's Assistant</h1>
         </div>
         <div className="w-10 h-10 rounded-full bg-darkcard border border-gray-800 flex items-center justify-center p-2">
