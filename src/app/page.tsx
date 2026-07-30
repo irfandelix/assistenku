@@ -87,11 +87,11 @@ export default function Home() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <header className="pt-2 flex justify-between items-center">
         <div>
-          <p className="text-neon font-medium text-sm tracking-widest uppercase mb-1">Executive Summary</p>
-          <h1 className="text-3xl font-bold text-gray-100 tracking-tight">Halo, Selamat Datang! 👋</h1>
+          <p className="text-neon font-medium text-sm tracking-widest uppercase mb-1">D Checklist</p>
+          <h1 className="text-3xl font-bold text-gray-100 tracking-tight">Delix's Assistant</h1>
         </div>
-        <div className="w-10 h-10 rounded-full bg-darkcard border border-gray-800 flex items-center justify-center">
-          <span className="text-gray-300 font-bold">A</span>
+        <div className="w-10 h-10 rounded-full bg-darkcard border border-gray-800 flex items-center justify-center p-2">
+          <img src="/logo.svg" alt="D Checklist Logo" className="w-full h-full object-contain" />
         </div>
       </header>
 
