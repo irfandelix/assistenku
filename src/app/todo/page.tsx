@@ -31,27 +31,35 @@ export default function TodoPage() {
   const handleSave = async () => {
     if (!currentTodo.title.trim()) return;
     
-    if (currentTodo.id) {
-      await updateDoc(doc(db, 'todos', currentTodo.id), {
-        title: currentTodo.title,
-        time: currentTodo.time,
-        done: currentTodo.done
-      });
-    } else {
-      await addDoc(collection(db, 'todos'), {
-        title: currentTodo.title,
-        time: currentTodo.time || 'Kapan saja',
-        done: false,
-        createdAt: serverTimestamp()
-      });
+    try {
+      if (currentTodo.id) {
+        await updateDoc(doc(db, 'todos', currentTodo.id), {
+          title: currentTodo.title,
+          time: currentTodo.time,
+          done: currentTodo.done
+        });
+      } else {
+        await addDoc(collection(db, 'todos'), {
+          title: currentTodo.title,
+          time: currentTodo.time || 'Kapan saja',
+          done: false,
+          createdAt: serverTimestamp()
+        });
+      }
+      setIsEditing(false);
+    } catch (error: any) {
+      alert('Gagal menyimpan: ' + error.message);
     }
-    setIsEditing(false);
   };
 
   const handleDelete = async (todoId: string) => {
     if (confirm('Hapus tugas ini?')) {
-      await deleteDoc(doc(db, 'todos', todoId));
-      setIsEditing(false);
+      try {
+        await deleteDoc(doc(db, 'todos', todoId));
+        setIsEditing(false);
+      } catch (error: any) {
+        alert('Gagal menghapus: ' + error.message);
+      }
     }
   };
 

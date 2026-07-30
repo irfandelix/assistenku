@@ -33,27 +33,35 @@ export default function FinancePage() {
     
     const amountNum = parseFloat(currentTx.amount);
     
-    if (currentTx.id) {
-      await updateDoc(doc(db, 'finance', currentTx.id), {
-        title: currentTx.title,
-        amount: amountNum,
-        type: currentTx.type
-      });
-    } else {
-      await addDoc(collection(db, 'finance'), {
-        title: currentTx.title,
-        amount: amountNum,
-        type: currentTx.type,
-        createdAt: serverTimestamp()
-      });
+    try {
+      if (currentTx.id) {
+        await updateDoc(doc(db, 'finance', currentTx.id), {
+          title: currentTx.title,
+          amount: amountNum,
+          type: currentTx.type
+        });
+      } else {
+        await addDoc(collection(db, 'finance'), {
+          title: currentTx.title,
+          amount: amountNum,
+          type: currentTx.type,
+          createdAt: serverTimestamp()
+        });
+      }
+      setIsEditing(false);
+    } catch (error: any) {
+      alert('Gagal menyimpan: ' + error.message);
     }
-    setIsEditing(false);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Hapus catatan ini?')) {
-      await deleteDoc(doc(db, 'finance', id));
-      setIsEditing(false);
+      try {
+        await deleteDoc(doc(db, 'finance', id));
+        setIsEditing(false);
+      } catch (error: any) {
+        alert('Gagal menghapus: ' + error.message);
+      }
     }
   };
 

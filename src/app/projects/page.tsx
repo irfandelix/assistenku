@@ -28,29 +28,37 @@ export default function ProjectsPage() {
   const handleSave = async () => {
     if (!currentProject.title.trim()) return;
     
-    if (currentProject.id) {
-      await updateDoc(doc(db, 'projects', currentProject.id), {
-        title: currentProject.title,
-        client: currentProject.client,
-        link: currentProject.link,
-        isPaid: currentProject.isPaid
-      });
-    } else {
-      await addDoc(collection(db, 'projects'), {
-        title: currentProject.title,
-        client: currentProject.client,
-        link: currentProject.link,
-        isPaid: currentProject.isPaid,
-        createdAt: serverTimestamp()
-      });
+    try {
+      if (currentProject.id) {
+        await updateDoc(doc(db, 'projects', currentProject.id), {
+          title: currentProject.title,
+          client: currentProject.client,
+          link: currentProject.link,
+          isPaid: currentProject.isPaid
+        });
+      } else {
+        await addDoc(collection(db, 'projects'), {
+          title: currentProject.title,
+          client: currentProject.client,
+          link: currentProject.link,
+          isPaid: currentProject.isPaid,
+          createdAt: serverTimestamp()
+        });
+      }
+      setIsEditing(false);
+    } catch (error: any) {
+      alert('Gagal menyimpan: ' + error.message);
     }
-    setIsEditing(false);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Hapus proyek ini?')) {
-      await deleteDoc(doc(db, 'projects', id));
-      setIsEditing(false);
+      try {
+        await deleteDoc(doc(db, 'projects', id));
+        setIsEditing(false);
+      } catch (error: any) {
+        alert('Gagal menghapus: ' + error.message);
+      }
     }
   };
 

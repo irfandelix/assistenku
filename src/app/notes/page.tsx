@@ -28,26 +28,34 @@ export default function NotesPage() {
   const handleSave = async () => {
     if (!currentNote.title.trim() && !currentNote.content.trim()) return;
     
-    if (currentNote.id) {
-      await updateDoc(doc(db, 'notes', currentNote.id), {
-        title: currentNote.title,
-        content: currentNote.content,
-        updatedAt: serverTimestamp()
-      });
-    } else {
-      await addDoc(collection(db, 'notes'), {
-        title: currentNote.title,
-        content: currentNote.content,
-        updatedAt: serverTimestamp()
-      });
+    try {
+      if (currentNote.id) {
+        await updateDoc(doc(db, 'notes', currentNote.id), {
+          title: currentNote.title,
+          content: currentNote.content,
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        await addDoc(collection(db, 'notes'), {
+          title: currentNote.title,
+          content: currentNote.content,
+          updatedAt: serverTimestamp()
+        });
+      }
+      setIsEditing(false);
+    } catch (error: any) {
+      alert('Gagal menyimpan: ' + error.message);
     }
-    setIsEditing(false);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Hapus catatan ini?')) {
-      await deleteDoc(doc(db, 'notes', id));
-      setIsEditing(false);
+      try {
+        await deleteDoc(doc(db, 'notes', id));
+        setIsEditing(false);
+      } catch (error: any) {
+        alert('Gagal menghapus: ' + error.message);
+      }
     }
   };
 
