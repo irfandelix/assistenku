@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Personal Dashboard",
-  description: "Exclusive personal dashboard app",
+  title: "Delix's Assistant",
+  description: "Exclusive personal digital assistant",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Dashboard",
+    title: "Assistant",
   },
 };
 

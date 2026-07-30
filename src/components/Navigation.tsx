@@ -48,7 +48,7 @@ export default function Navigation() {
         <div className="mb-8 px-4 flex items-center gap-3">
           <img src="/logo.svg" alt="Logo" className="w-8 h-8" />
           <h1 className="text-xl font-bold text-gray-100">
-            D Checklist
+            Delix's Assistant
           </h1>
         </div>
         <div className="flex flex-col gap-2">
