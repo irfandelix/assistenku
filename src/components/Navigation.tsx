@@ -24,7 +24,7 @@ export default function Navigation() {
   return (
     <>
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-white/80 backdrop-blur-md border-t border-gray-200 p-3 pb-safe md:hidden dark:bg-gray-900/80 dark:border-gray-800">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around bg-white/90 backdrop-blur-md border-t border-gray-200 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom,1rem)+0.5rem)] md:hidden dark:bg-gray-900/90 dark:border-gray-800">
         {links.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
