@@ -170,16 +170,18 @@ export default function ProjectsPage() {
                   placeholder="Misal: PT. Maju Jaya"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Link Google Drive</label>
-                <input 
-                  type="url"
-                  value={currentProject.link}
-                  onChange={e => setCurrentProject({...currentProject, link: e.target.value})}
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 outline-none focus:border-emerald-500"
-                  placeholder="https://drive.google.com/..."
-                />
-              </div>
+              {currentProject.id && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Link Google Drive</label>
+                  <input 
+                    type="url"
+                    value={currentProject.link}
+                    onChange={e => setCurrentProject({...currentProject, link: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 outline-none focus:border-emerald-500"
+                    placeholder="https://drive.google.com/..."
+                  />
+                </div>
+              )}
               {currentProject.id && (
                 currentProject.link.trim() === '' ? (
                   <div className="bg-yellow-50 dark:bg-yellow-900/30 p-3 rounded-xl border border-yellow-200 dark:border-yellow-800/50 flex gap-3 mt-4">
