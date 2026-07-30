@@ -1,18 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2563eb" /> <!-- Blue 600 -->
-      <stop offset="100%" stop-color="#059669" /> <!-- Emerald 600 -->
+    <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E676" /> <!-- Neon Green -->
+      <stop offset="100%" stop-color="#2979FF" /> <!-- Accent Blue -->
     </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="10" stdDeviation="15" flood-opacity="0.3" />
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#00E676" flood-opacity="0.4" />
     </filter>
   </defs>
   <!-- Background -->
-  <rect width="512" height="512" rx="112" fill="#0f172a" /> <!-- Slate 900 -->
-  <!-- Inner Shape -->
-  <rect x="128" y="128" width="256" height="256" rx="64" fill="url(#grad)" filter="url(#shadow)" />
-  <!-- Center Graphic (Abstract Dashboard) -->
-  <path d="M 210 190 L 302 190 A 20 20 0 0 1 322 210 L 322 302 A 20 20 0 0 1 302 322 L 210 322 A 20 20 0 0 1 190 302 L 190 210 A 20 20 0 0 1 210 190 Z" fill="#ffffff" opacity="0.9" />
-  <circle cx="256" cy="256" r="32" fill="#0f172a" />
+  <rect width="512" height="512" rx="112" fill="#0B0E14" />
+  
+  <!-- D Shape -->
+  <path d="M 160 140 L 260 140 C 360 140 380 200 380 256 C 380 312 360 372 260 372 L 160 372 Z" fill="none" stroke="#ffffff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Checkmark intersecting the D -->
+  <path d="M 210 260 L 270 320 L 410 160" fill="none" stroke="url(#neonGrad)" stroke-width="52" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" />
 </svg>
