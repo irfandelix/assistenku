@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, ArrowUpRight, ArrowDownRight, X, Save, Trash2, Send, Coffee, ShoppingBag, Briefcase, CreditCard } from 'lucide-react';
+import { Plus, ArrowUpRight, ArrowDownRight, X, Save, Trash2, Send, Coffee, ShoppingBag, Briefcase, CreditCard, Sparkles, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { clsx } from 'clsx';
@@ -29,6 +29,8 @@ export default function FinancePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentTx, setCurrentTx] = useState({ id: '', title: '', amount: '', type: 'expense' });
   const [isSendingReport, setIsSendingReport] = useState(false);
+  const [aiInsights, setAiInsights] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'finance'), orderBy('createdAt', 'desc'));
@@ -103,6 +105,26 @@ export default function FinancePage() {
     }
   };
 
+  const analyzeFinances = async () => {
+    if (isAnalyzing || transactions.length === 0) return;
+    setIsAnalyzing(true);
+    setAiInsights(null);
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactions })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal mengambil analisis');
+      setAiInsights(data.data);
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   // Prepare chart data (last 7 days expenses)
   const chartData = Array.from({length: 7}).map((_, i) => {
     const d = subDays(new Date(), 6 - i);
@@ -154,6 +176,38 @@ export default function FinancePage() {
       <div className="bg-darkcard border border-gray-800 p-5 rounded-3xl">
         <h3 className="text-sm font-bold text-gray-200 mb-4">Grafik Pemasukan & Pengeluaran (7 Hari)</h3>
         <FinanceChart transactions={transactions} height={180} />
+      </div>
+
+      {/* AI Analysis Section */}
+      <div className="bg-[#050608] border border-neon/30 p-6 rounded-3xl shadow-[0_0_20px_rgba(0,230,118,0.1)] relative overflow-hidden">
+        <div className="absolute -top-10 -right-10 w-40 h-40 bg-neon/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex justify-between items-center mb-4 relative z-10">
+          <div>
+            <h3 className="text-lg font-bold text-neon flex items-center gap-2">
+              <Sparkles className="w-5 h-5" /> Gemini AI Analysis
+            </h3>
+            <p className="text-sm text-gray-400 mt-1">Dapatkan wawasan keuangan pribadi Anda secara instan.</p>
+          </div>
+          <button 
+            onClick={analyzeFinances}
+            disabled={isAnalyzing || transactions.length === 0}
+            className="bg-neon/10 text-neon hover:bg-neon/20 border border-neon/50 px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50"
+          >
+            {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {isAnalyzing ? 'Menganalisis...' : 'Analisis Sekarang'}
+          </button>
+        </div>
+
+        {aiInsights && (
+          <div className="mt-6 pt-6 border-t border-gray-800 relative z-10">
+            <div className="prose prose-invert prose-sm max-w-none text-gray-300 space-y-3 leading-relaxed" 
+                 dangerouslySetInnerHTML={{ 
+                   __html: aiInsights.replace(/\n/g, '<br/>').replace(/\*\*(.*?)\*\*/g, '<strong class="text-neon">$1</strong>')
+                 }} 
+            />
+          </div>
+        )}
       </div>
       
       {/* Huge CTA */}
