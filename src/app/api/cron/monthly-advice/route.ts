@@ -61,7 +61,7 @@ export async function GET(request: Request) {
     
     // Get month name in Indonesian for the prompt
     const monthName = targetMonthDate.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-    let transactionText = \`Berikut adalah data transaksi keuangan saya untuk bulan \${monthName}:\n\n\`;
+    let transactionText = `Berikut adalah data transaksi keuangan saya untuk bulan ${monthName}:\n\n`;
 
     snapshot.docs.forEach(doc => {
       const data = doc.data();
@@ -79,16 +79,16 @@ export async function GET(request: Request) {
         ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('id-ID')
         : monthName;
         
-      transactionText += \`- \${date}: \${type} Rp \${data.amount.toLocaleString('id-ID')} (\${data.title})\n\`;
+      transactionText += `- ${date}: ${type} Rp ${data.amount.toLocaleString('id-ID')} (${data.title})\n`;
     });
 
     if (totalIncome === 0 && totalExpense === 0) {
       transactionText += "(Tidak ada transaksi yang tercatat bulan ini)\n";
     }
 
-    transactionText += \`\nTotal Pemasukan: Rp \${totalIncome.toLocaleString('id-ID')}\`;
-    transactionText += \`\nTotal Pengeluaran: Rp \${totalExpense.toLocaleString('id-ID')}\`;
-    transactionText += \`\nSisa Saldo Bersih: Rp \${(totalIncome - totalExpense).toLocaleString('id-ID')}\n\`;
+    transactionText += `\nTotal Pemasukan: Rp ${totalIncome.toLocaleString('id-ID')}`;
+    transactionText += `\nTotal Pengeluaran: Rp ${totalExpense.toLocaleString('id-ID')}`;
+    transactionText += `\nSisa Saldo Bersih: Rp ${(totalIncome - totalExpense).toLocaleString('id-ID')}\n`;
 
     // 4. Generate Insights using Gemini AI
     if (!process.env.GEMINI_API_KEY) {
