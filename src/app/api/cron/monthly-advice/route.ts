@@ -106,7 +106,7 @@ Tolong berikan pesan Telegram (jangan pakai Markdown terlalu rumit, gunakan <b> 
 3. Berikan saran berhemat untuk bulan depan.
 4. Jangan terlalu panjang, pastikan pas dibaca di Telegram.`;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-pro-preview' });
     const result = await model.generateContent(prompt);
     let aiResponse = result.response.text();
     
