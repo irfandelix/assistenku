@@ -56,8 +56,8 @@ Tolong berikan:
 
 Jawab dengan format Markdown yang rapi, gunakan emoji, dan jangan terlalu panjang (maksimal 3-4 paragraf).`;
 
-    // gemini-3.5-flash is the only model with > 0 free quota for this account
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+    // Use gemini-flash-latest to automatically use the best available flash model
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
     
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
