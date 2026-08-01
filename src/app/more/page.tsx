@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { CheckSquare, FileText, Settings, User, Target, Tv, Activity } from 'lucide-react';
+import { CheckSquare, FileText, Settings, User, Target, Tv, Activity, ShoppingBag, Heart } from 'lucide-react';
 
 export default function MorePage() {
   const menuItems = [
     { title: 'Tugas Harian (To-Do)', icon: CheckSquare, href: '/todo', color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
     { title: 'Target Tabungan (Goals)', icon: Target, href: '/goals', color: 'text-neon', bg: 'bg-neon/10' },
+    { title: 'Pengendali Hasrat (Wishlist)', icon: ShoppingBag, href: '/wishlist', color: 'text-orange-500', bg: 'bg-orange-500/10' },
+    { title: 'Mood Tracker (Mental Health)', icon: Heart, href: '/mood', color: 'text-pink-400', bg: 'bg-pink-400/10' },
     { title: 'Pencatat Kebiasaan (Habits)', icon: Activity, href: '/habits', color: 'text-purple-400', bg: 'bg-purple-400/10' },
     { title: 'Langganan (Subscriptions)', icon: Tv, href: '/subscriptions', color: 'text-red-400', bg: 'bg-red-400/10' },
     { title: 'Catatan Ide (Notes)', icon: FileText, href: '/notes', color: 'text-accent-orange', bg: 'bg-accent-orange/10' },

@@ -49,12 +49,13 @@ export async function GET(request: Request) {
     const endTimestamp = Timestamp.fromDate(endOfMonthUtc);
 
     const financeRef = collection(db, 'finance');
-    // Query >= startOfMonth and < endOfMonth
     let q = query(financeRef, where('createdAt', '>=', startTimestamp));
-    // Note: We can't use two different inequality filters in Firebase without a composite index, 
-    // so we'll just filter <= endTimestamp in memory or just trust that there are no future transactions.
-    // For safety, let's filter the end date in memory.
     const snapshot = await getDocs(q);
+
+    // Fetch Moods
+    const moodRef = collection(db, 'moods');
+    let qMood = query(moodRef, where('createdAt', '>=', startTimestamp));
+    const moodSnapshot = await getDocs(qMood);
 
     let totalIncome = 0;
     let totalExpense = 0;
@@ -62,6 +63,7 @@ export async function GET(request: Request) {
     // Get month name in Indonesian for the prompt
     const monthName = targetMonthDate.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
     let transactionText = `Berikut adalah data transaksi keuangan saya untuk bulan ${monthName}:\n\n`;
+
 
     snapshot.docs.forEach(doc => {
       const data = doc.data();
@@ -90,6 +92,22 @@ export async function GET(request: Request) {
     transactionText += `\nTotal Pengeluaran: Rp ${totalExpense.toLocaleString('id-ID')}`;
     transactionText += `\nSisa Saldo Bersih: Rp ${(totalIncome - totalExpense).toLocaleString('id-ID')}\n`;
 
+    let moodText = `\nBerikut adalah data suasana hati (mood) saya bulan ini:\n`;
+    let moodCounts: any = { happy: 0, neutral: 0, sad: 0, stressed: 0 };
+    
+    moodSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.createdAt && data.createdAt.seconds >= endTimestamp.seconds) return;
+      if (data.moodId) {
+        moodCounts[data.moodId] = (moodCounts[data.moodId] || 0) + 1;
+      }
+    });
+    
+    moodText += `- Senang: ${moodCounts.happy} hari\n`;
+    moodText += `- Biasa: ${moodCounts.neutral} hari\n`;
+    moodText += `- Sedih: ${moodCounts.sad} hari\n`;
+    moodText += `- Stres: ${moodCounts.stressed} hari\n`;
+
     // 4. Generate Insights using Gemini AI
     if (!process.env.GEMINI_API_KEY) {
       throw new Error('GEMINI_API_KEY is missing');
@@ -99,10 +117,11 @@ export async function GET(request: Request) {
 Gunakan bahasa Indonesia yang gaul, suportif, dan profesional.
 Ini adalah jadwal laporan akhir bulan. Berdasarkan data bulan ini:
 ${transactionText}
+${moodText}
 
 Tolong berikan pesan Telegram (jangan pakai Markdown terlalu rumit, gunakan <b> </b> untuk tebal atau <i> </i> untuk miring jika perlu, atau cukup teks bersih dengan emoji):
 1. Sapa dengan ramah "Halo, ini laporan akhir bulanmu!"
-2. Berikan 3 insight atau evaluasi kinerja keuangan bulan ini.
+2. Berikan 3 insight atau evaluasi kinerja keuangan bulan ini. Coba hubungkan data mood dengan pengeluaran/tabungan jika memungkinkan (misal: "Wah, bulan ini kamu sering stres, dan pantes aja pengeluaranmu naik untuk jajan").
 3. Berikan saran berhemat untuk bulan depan.
 4. Jangan terlalu panjang, pastikan pas dibaca di Telegram.`;
 

@@ -7,6 +7,7 @@ import { collection, query, orderBy, onSnapshot, limit, where } from 'firebase/f
 import { Wallet, Map, CheckSquare, FileText, ArrowRight, TrendingUp, TrendingDown, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
 import { startOfDay, endOfDay } from 'date-fns';
 import FinanceChart from '@/components/FinanceChart';
+import AIAssistant from '@/components/AIAssistant';
 
 export default function Home() {
   const [balance, setBalance] = useState(0);
@@ -16,6 +17,8 @@ export default function Home() {
   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0 });
   const [recentNotes, setRecentNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // ... (keep the rest identical until the return block, wait, I can't use replace_file_content across the whole file easily if I omit code. I need to be precise)
 
   useEffect(() => {
     // Finance Listener
@@ -85,6 +88,13 @@ export default function Home() {
   }, []);
 
   const progressPercent = taskStats.total === 0 ? 0 : Math.round((taskStats.completed / taskStats.total) * 100);
+
+  const contextData = `
+Total Saldo: Rp ${balance.toLocaleString('id-ID')}
+Pengeluaran Hari Ini: Rp ${todayExpense.toLocaleString('id-ID')}
+Proyek Aktif: ${activeProjects}
+Tugas Selesai: ${taskStats.completed} dari ${taskStats.total}
+  `.trim();
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -171,6 +181,8 @@ export default function Home() {
           ))}
         </div>
       </div>
+      
+      <AIAssistant contextData={contextData} />
     </div>
   );
 }
