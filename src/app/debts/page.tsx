@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, ArrowUpRight, ArrowDownRight, X, Save, Trash2, CheckCircle2, Circle, Handshake } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDocs, where } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { format } from 'date-fns';
@@ -40,14 +40,36 @@ export default function DebtsPage() {
           type: currentDebt.type,
           isPaid: currentDebt.isPaid
         });
+
+        // Update the linked initial finance transaction
+        const qTx = query(collection(db, 'finance'), where('linkedDebtId', '==', currentDebt.id), where('isDebtRepayment', '==', false));
+        const snap = await getDocs(qTx);
+        snap.forEach(async (d) => {
+          await updateDoc(doc(db, 'finance', d.id), {
+            title: currentDebt.type === 'payable' ? `Hutang dari ${currentDebt.name}` : `Piutang ke ${currentDebt.name}`,
+            amount: amountNum,
+            type: currentDebt.type === 'payable' ? 'income' : 'expense'
+          });
+        });
+
       } else {
-        await addDoc(collection(db, 'debts'), {
+        const docRef = await addDoc(collection(db, 'debts'), {
           name: currentDebt.name,
           amount: amountNum,
           description: currentDebt.description,
           type: currentDebt.type,
           isPaid: false,
           createdAt: serverTimestamp()
+        });
+
+        // Create linked finance transaction for the new debt
+        await addDoc(collection(db, 'finance'), {
+          title: currentDebt.type === 'payable' ? `Hutang dari ${currentDebt.name}` : `Piutang ke ${currentDebt.name}`,
+          amount: amountNum,
+          type: currentDebt.type === 'payable' ? 'income' : 'expense',
+          createdAt: serverTimestamp(),
+          linkedDebtId: docRef.id,
+          isDebtRepayment: false
         });
       }
       setIsEditing(false);
@@ -60,6 +82,14 @@ export default function DebtsPage() {
     if (confirm('Hapus catatan ini?')) {
       try {
         await deleteDoc(doc(db, 'debts', id));
+        
+        // Delete all linked finance transactions (initial and repayment)
+        const qTx = query(collection(db, 'finance'), where('linkedDebtId', '==', id));
+        const snap = await getDocs(qTx);
+        snap.forEach(async (d) => {
+          await deleteDoc(doc(db, 'finance', d.id));
+        });
+        
         setIsEditing(false);
       } catch (error: any) {
         alert('Gagal menghapus: ' + error.message);
@@ -69,9 +99,29 @@ export default function DebtsPage() {
 
   const toggleStatus = async (debt: any) => {
     try {
+      const newStatus = !debt.isPaid;
       await updateDoc(doc(db, 'debts', debt.id), {
-        isPaid: !debt.isPaid
+        isPaid: newStatus
       });
+
+      if (newStatus) {
+        // Just marked as paid, create a repayment transaction
+        await addDoc(collection(db, 'finance'), {
+          title: debt.type === 'payable' ? `Bayar Hutang ke ${debt.name}` : `Pelunasan Piutang dari ${debt.name}`,
+          amount: debt.amount,
+          type: debt.type === 'payable' ? 'expense' : 'income',
+          createdAt: serverTimestamp(),
+          linkedDebtId: debt.id,
+          isDebtRepayment: true
+        });
+      } else {
+        // Marked as unpaid, delete the repayment transaction
+        const qTx = query(collection(db, 'finance'), where('linkedDebtId', '==', debt.id), where('isDebtRepayment', '==', true));
+        const snap = await getDocs(qTx);
+        snap.forEach(async (d) => {
+          await deleteDoc(doc(db, 'finance', d.id));
+        });
+      }
     } catch (error: any) {
       alert('Gagal mengubah status: ' + error.message);
     }
