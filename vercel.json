@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/monthly-advice",
       "schedule": "59 16 * * *"
+    },
+    {
+      "path": "/api/cron/daily",
+      "schedule": "0 1 * * *"
     }
   ]
 }
