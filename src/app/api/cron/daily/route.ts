@@ -17,17 +17,25 @@ export async function GET(request: Request) {
     const todos = todosSnap.docs.map(doc => doc.data());
 
     // 2. Fetch tomorrow's subscriptions
-    // In UTC, we need to adjust to local time roughly. Let's just use a simple JS Date and add 1 day.
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // In UTC, we need to adjust to local time (WIB = UTC+7)
+    const tomorrowWib = new Date();
+    tomorrowWib.setTime(tomorrowWib.getTime() + (7 * 60 * 60 * 1000));
+    tomorrowWib.setDate(tomorrowWib.getDate() + 1);
+    const tomorrowStr = tomorrowWib.toISOString().split('T')[0];
+
     // Since Firebase doesn't support complex querying easily on day of month without specific indexes, 
     // we'll just fetch all subscriptions and filter in memory since the list is small.
     const subsSnap = await getDocs(collection(db, 'subscriptions'));
-    const tomorrowDay = tomorrow.getDate();
     
     const upcomingSubs = subsSnap.docs
       .map(doc => doc.data())
-      .filter(sub => parseInt(sub.billingDay) === tomorrowDay);
+      .filter(sub => {
+        // Fallback for old data with billingDay
+        if (!sub.nextDueDate && sub.billingDay) {
+           return parseInt(sub.billingDay) === tomorrowWib.getDate();
+        }
+        return sub.nextDueDate === tomorrowStr;
+      });
 
     // 3. Construct Message
     let message = '🌅 <b>MORNING BRIEFING</b>\n\n';

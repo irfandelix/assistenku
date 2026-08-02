@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, X, Save, Trash2, Tv, ChevronLeft, Calendar } from 'lucide-react';
+import { Plus, X, Save, Trash2, Tv, ChevronLeft, Calendar, CreditCard } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Link from 'next/link';
+import { format, addMonths, parseISO, differenceInDays } from 'date-fns';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -15,7 +16,9 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 export default function SubscriptionsPage() {
   const [subs, setSubs] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentSub, setCurrentSub] = useState({ id: '', name: '', price: '', billingDay: '' });
+  const [isPaying, setIsPaying] = useState(false);
+  const [payMonths, setPayMonths] = useState(1);
+  const [currentSub, setCurrentSub] = useState({ id: '', name: '', price: '', nextDueDate: '' });
 
   useEffect(() => {
     const q = query(collection(db, 'subscriptions'), orderBy('createdAt', 'desc'));
@@ -27,30 +30,55 @@ export default function SubscriptionsPage() {
   }, []);
 
   const handleSave = async () => {
-    if (!currentSub.name.trim() || !currentSub.price || !currentSub.billingDay) return;
+    if (!currentSub.name.trim() || !currentSub.price || !currentSub.nextDueDate) return;
     const priceNum = parseFloat(currentSub.price);
-    let dayNum = parseInt(currentSub.billingDay);
-    if (dayNum < 1) dayNum = 1;
-    if (dayNum > 31) dayNum = 31;
     
     try {
       if (currentSub.id) {
         await updateDoc(doc(db, 'subscriptions', currentSub.id), {
           name: currentSub.name,
           price: priceNum,
-          billingDay: dayNum
+          nextDueDate: currentSub.nextDueDate
         });
       } else {
         await addDoc(collection(db, 'subscriptions'), {
           name: currentSub.name,
           price: priceNum,
-          billingDay: dayNum,
+          nextDueDate: currentSub.nextDueDate,
           createdAt: serverTimestamp()
         });
       }
       setIsEditing(false);
     } catch (error: any) {
       alert('Gagal menyimpan: ' + error.message);
+    }
+  };
+
+  const executePayment = async () => {
+    if (!currentSub.id) return;
+    const totalPrice = parseFloat(currentSub.price) * payMonths;
+    
+    try {
+      // 1. Add Expense
+      await addDoc(collection(db, 'finance'), {
+        title: `Bayar Langganan: ${currentSub.name} (${payMonths} bulan)`,
+        amount: totalPrice,
+        type: 'expense',
+        createdAt: serverTimestamp()
+      });
+
+      // 2. Extend Due Date
+      const currentDue = parseISO(currentSub.nextDueDate);
+      const newDue = addMonths(currentDue, payMonths);
+      const newDueStr = format(newDue, 'yyyy-MM-dd');
+
+      await updateDoc(doc(db, 'subscriptions', currentSub.id), {
+        nextDueDate: newDueStr
+      });
+
+      setIsPaying(false);
+    } catch (e: any) {
+      alert('Gagal memproses pembayaran: ' + e.message);
     }
   };
 
@@ -65,9 +93,22 @@ export default function SubscriptionsPage() {
     }
   };
 
-  const openEditor = (s = { id: '', name: '', price: '', billingDay: '' }) => {
-    setCurrentSub(s);
+  const openEditor = (s: any = null) => {
+    if (s) {
+      // Compatibility fallback: if they only have billingDay from old schema, convert to nextDueDate
+      let initialDate = s.nextDueDate || format(new Date(), 'yyyy-MM-dd');
+      setCurrentSub({ id: s.id, name: s.name, price: s.price, nextDueDate: initialDate });
+    } else {
+      setCurrentSub({ id: '', name: '', price: '', nextDueDate: format(new Date(), 'yyyy-MM-dd') });
+    }
     setIsEditing(true);
+  };
+
+  const openPayment = (s: any) => {
+    let initialDate = s.nextDueDate || format(new Date(), 'yyyy-MM-dd');
+    setCurrentSub({ id: s.id, name: s.name, price: s.price, nextDueDate: initialDate });
+    setPayMonths(1);
+    setIsPaying(true);
   };
 
   const getTheme = (name: string) => {
@@ -80,6 +121,18 @@ export default function SubscriptionsPage() {
   };
 
   const totalMonthly = subs.reduce((acc, curr) => acc + (parseFloat(curr.price) || 0), 0);
+
+  const renderStatus = (nextDueStr: string) => {
+    if (!nextDueStr) return <span className="text-gray-500 text-xs font-bold">SET DATE</span>;
+    const due = parseISO(nextDueStr);
+    const now = new Date();
+    const diff = differenceInDays(due, now);
+
+    if (diff < 0) return <span className="text-red-500 text-xs font-bold uppercase">Terlewat</span>;
+    if (diff === 0) return <span className="text-orange-500 text-xs font-bold uppercase">Hari Ini</span>;
+    if (diff <= 7) return <span className="text-yellow-500 text-xs font-bold uppercase">H-{diff}</span>;
+    return <span className="text-gray-400 text-xs font-bold uppercase">{format(due, 'dd MMM yyyy')}</span>;
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20">
@@ -100,6 +153,10 @@ export default function SubscriptionsPage() {
         <h2 className="text-3xl font-bold text-gray-100">Rp {totalMonthly.toLocaleString('id-ID')}</h2>
       </div>
 
+      <div className="bg-[#050608] border border-gray-800 p-4 rounded-2xl">
+        <p className="text-sm text-gray-400">💡 <strong>Tips:</strong> Tekan ikon kartu kredit pada langganan untuk membayar, otomatis memotong saldo dan memajukan tanggal tagihan!</p>
+      </div>
+
       {/* Huge CTA */}
       <button 
         onClick={() => openEditor()}
@@ -107,6 +164,39 @@ export default function SubscriptionsPage() {
       >
         <Plus className="w-5 h-5" /> Catat Langganan Baru
       </button>
+
+      {/* Payment Modal */}
+      {isPaying && (
+        <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-darkcard border border-gray-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-bold text-gray-100 mb-2">Bayar Langganan</h2>
+            <p className="text-gray-400 text-sm mb-6">Anda akan membayar {currentSub.name} seharga Rp {parseFloat(currentSub.price).toLocaleString('id-ID')} / bulan.</p>
+            
+            <label className="block text-sm font-medium mb-2 text-gray-300">Bayar untuk berapa bulan?</label>
+            <div className="flex items-center gap-4 bg-[#050608] p-2 rounded-2xl border border-gray-800 mb-6">
+              <button onClick={() => setPayMonths(Math.max(1, payMonths - 1))} className="w-10 h-10 bg-gray-800 rounded-xl font-bold">-</button>
+              <div className="flex-1 text-center font-bold text-xl">{payMonths}</div>
+              <button onClick={() => setPayMonths(payMonths + 1)} className="w-10 h-10 bg-neon text-black rounded-xl font-bold">+</button>
+            </div>
+
+            <div className="bg-gray-800/50 p-4 rounded-2xl mb-6">
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-400">Total Potongan</span>
+                <span className="font-bold text-red-400">- Rp {(parseFloat(currentSub.price) * payMonths).toLocaleString('id-ID')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Jatuh Tempo Baru</span>
+                <span className="font-bold text-neon">{format(addMonths(parseISO(currentSub.nextDueDate), payMonths), 'dd MMM yyyy')}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setIsPaying(false)} className="flex-1 p-3 rounded-xl border border-gray-700 text-gray-300 font-bold">Batal</button>
+              <button onClick={executePayment} className="flex-1 p-3 rounded-xl bg-neon text-black font-bold">Konfirmasi</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Editor Modal */}
       {isEditing && (
@@ -143,16 +233,13 @@ export default function SubscriptionsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-400">Tanggal Jatuh Tempo (1-31)</label>
+                <label className="block text-sm font-medium mb-1 text-gray-400">Jatuh Tempo Berikutnya</label>
                 <input 
-                  type="number"
-                  min="1" max="31"
-                  value={currentSub.billingDay}
-                  onChange={e => setCurrentSub({...currentSub, billingDay: e.target.value})}
+                  type="date"
+                  value={currentSub.nextDueDate}
+                  onChange={e => setCurrentSub({...currentSub, nextDueDate: e.target.value})}
                   className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-neon transition-colors"
-                  placeholder="15"
                 />
-                <p className="text-xs text-gray-500 mt-1">Bot akan mengingatkan Anda H-1 sebelum tanggal ini.</p>
               </div>
             </div>
             
@@ -184,25 +271,34 @@ export default function SubscriptionsPage() {
         {subs.map((s) => (
           <div 
             key={s.id} 
-            onClick={() => openEditor(s)}
             className={cn(
-              "p-4 rounded-2xl flex items-center gap-4 cursor-pointer hover:border-gray-700 transition-colors border bg-darkcard",
+              "p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center gap-4 hover:border-gray-700 transition-colors border bg-darkcard",
               getTheme(s.name)
             )}
           >
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-[#050608] border border-inherit">
-              <Tv className="w-6 h-6 border-inherit text-inherit" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-gray-100 truncate">{s.name}</h3>
-              <p className="font-medium text-inherit">Rp {s.price.toLocaleString('id-ID')}</p>
-            </div>
-            <div className="shrink-0 text-right bg-[#050608] px-3 py-2 rounded-xl border border-gray-800">
-              <div className="flex items-center gap-1 text-gray-400 justify-center">
-                <Calendar className="w-3 h-3" />
-                <span className="text-[10px] uppercase font-bold tracking-wider">Tgl</span>
+            <div className="flex items-center gap-4 flex-1 w-full" onClick={() => openEditor(s)}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-[#050608] border border-inherit cursor-pointer">
+                <Tv className="w-6 h-6 border-inherit text-inherit" />
               </div>
-              <p className="text-lg font-black text-gray-200 leading-tight">{s.billingDay}</p>
+              <div className="flex-1 min-w-0 cursor-pointer">
+                <h3 className="font-bold text-gray-100 truncate">{s.name}</h3>
+                <p className="font-medium text-inherit">Rp {s.price?.toLocaleString('id-ID')}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 w-full md:w-auto justify-end mt-2 md:mt-0 pt-3 md:pt-0 border-t border-gray-800 md:border-none">
+              <div className="text-right px-3">
+                <div className="flex items-center justify-end gap-1 mb-1">
+                  <Calendar className="w-3 h-3 text-gray-400" />
+                </div>
+                {renderStatus(s.nextDueDate)}
+              </div>
+              <button 
+                onClick={() => openPayment(s)}
+                className="bg-[#050608] border border-gray-700 hover:border-neon text-gray-300 hover:text-neon p-3 rounded-xl transition-colors shrink-0"
+              >
+                <CreditCard className="w-5 h-5" />
+              </button>
             </div>
           </div>
         ))}
