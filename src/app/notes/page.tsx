@@ -144,8 +144,8 @@ export default function NotesPage() {
         </div>
       )}
 
-      {/* Masonry-like Grid for Notes */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* List for Notes */}
+      <div className="flex flex-col gap-4">
         {notes.length === 0 && (
           <div className="col-span-2 text-center py-12 border border-dashed border-gray-800 rounded-3xl">
             <p className="text-gray-500">Belum ada catatan ide.</p>
