@@ -6,6 +6,8 @@ import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { format, parseISO } from 'date-fns';
+import { id as localeId } from 'date-fns/locale';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -165,13 +167,12 @@ export default function TodoPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-400">Waktu / Keterangan</label>
+                <label className="block text-sm font-medium mb-1 text-gray-400">Tenggat Waktu (Deadline)</label>
                 <input 
-                  type="text"
+                  type="datetime-local"
                   value={currentTodo.time}
                   onChange={e => setCurrentTodo({...currentTodo, time: e.target.value})}
-                  className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-neon transition-colors"
-                  placeholder="Misal: Hari ini, 10:00"
+                  className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-neon transition-colors [color-scheme:dark]"
                 />
               </div>
             </div>
@@ -231,7 +232,11 @@ export default function TodoPage() {
                     </p>
                     <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
                       <Clock className="w-3 h-3" />
-                      <span>{todo.time}</span>
+                      <span>
+                        {todo.time 
+                          ? (todo.time.includes('T') ? format(parseISO(todo.time), 'dd MMM yyyy, HH:mm', { locale: localeId }) : todo.time)
+                          : 'Tidak ada tenggat waktu'}
+                      </span>
                     </div>
                   </div>
                   
