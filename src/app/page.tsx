@@ -55,16 +55,11 @@ export default function Home() {
     const qTodo = query(collection(db, 'todos'));
     const unsubTodo = onSnapshot(qTodo, (snapshot) => {
       let completed = 0;
-      const start = startOfDay(new Date()).getTime();
-      const end = endOfDay(new Date()).getTime();
       let totalToday = 0;
 
       snapshot.docs.forEach(doc => {
         const data = doc.data();
-        // Assuming we want to track today's progress or all active tasks
-        // Let's track overall pending vs completed, or just total completed.
-        // For simplicity:
-        if (data.completed) {
+        if (data.done) {
           completed++;
         }
         totalToday++;
