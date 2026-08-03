@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { format, subDays, isSameDay } from 'date-fns';
+import { format, subDays, isSameDay, isSameMonth } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import FinanceChart from '@/components/FinanceChart';
 
@@ -81,6 +81,15 @@ export default function FinancePage() {
   const totalExpense = transactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
   const balance = totalIncome - totalExpense;
 
+  const now = new Date();
+  const monthIncome = transactions
+    .filter(t => t.type === 'income' && t.createdAt?.toDate && isSameMonth(t.createdAt.toDate(), now))
+    .reduce((acc, curr) => acc + curr.amount, 0);
+  const monthExpense = transactions
+    .filter(t => t.type === 'expense' && t.createdAt?.toDate && isSameMonth(t.createdAt.toDate(), now))
+    .reduce((acc, curr) => acc + curr.amount, 0);
+  const monthBalance = monthIncome - monthExpense;
+
   const sendMonthlyReport = async () => {
     if (isSendingReport) return;
     setIsSendingReport(true);
@@ -146,28 +155,26 @@ export default function FinancePage() {
       {/* Summary Cards */}
       <div className="bg-darkcard border border-gray-800 p-6 rounded-3xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-neon/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-        <p className="text-gray-400 text-sm font-medium mb-1">Total Saldo Aktif</p>
+        <p className="text-gray-400 text-sm font-medium mb-1">Total Saldo (Sepanjang Waktu)</p>
         <h2 className="text-4xl font-bold text-gray-100 mb-6">Rp {balance.toLocaleString('id-ID')}</h2>
         
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-6 h-6 rounded-full bg-neon/20 flex items-center justify-center">
-                <ArrowUpRight className="w-3 h-3 text-neon" />
-              </div>
-              <p className="text-xs text-gray-400 font-medium">Pemasukan</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-[#050608] p-4 rounded-2xl border border-gray-800">
+            <h3 className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Bulan Ini</h3>
+            <p className="text-sm font-bold text-gray-200 mb-1">Rp {monthBalance.toLocaleString('id-ID')}</p>
+            <div className="flex gap-2 text-xs">
+              <span className="text-neon flex items-center"><ArrowUpRight className="w-3 h-3 mr-0.5" />{monthIncome >= 1000000 ? `${(monthIncome/1000000).toFixed(1)}M` : `${(monthIncome/1000).toFixed(0)}K`}</span>
+              <span className="text-red-500 flex items-center"><ArrowDownRight className="w-3 h-3 mr-0.5" />{monthExpense >= 1000000 ? `${(monthExpense/1000000).toFixed(1)}M` : `${(monthExpense/1000).toFixed(0)}K`}</span>
             </div>
-            <p className="font-bold text-gray-200">Rp {totalIncome.toLocaleString('id-ID')}</p>
           </div>
-          <div className="w-px bg-gray-800" />
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center">
-                <ArrowDownRight className="w-3 h-3 text-red-500" />
-              </div>
-              <p className="text-xs text-gray-400 font-medium">Pengeluaran</p>
+          
+          <div className="bg-[#050608] p-4 rounded-2xl border border-gray-800">
+            <h3 className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Semua Waktu</h3>
+            <p className="text-sm font-bold text-gray-200 mb-1">Rp {balance.toLocaleString('id-ID')}</p>
+            <div className="flex gap-2 text-xs">
+              <span className="text-neon flex items-center"><ArrowUpRight className="w-3 h-3 mr-0.5" />{totalIncome >= 1000000 ? `${(totalIncome/1000000).toFixed(1)}M` : `${(totalIncome/1000).toFixed(0)}K`}</span>
+              <span className="text-red-500 flex items-center"><ArrowDownRight className="w-3 h-3 mr-0.5" />{totalExpense >= 1000000 ? `${(totalExpense/1000000).toFixed(1)}M` : `${(totalExpense/1000).toFixed(0)}K`}</span>
             </div>
-            <p className="font-bold text-gray-200">Rp {totalExpense.toLocaleString('id-ID')}</p>
           </div>
         </div>
       </div>
