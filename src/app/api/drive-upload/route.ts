@@ -13,24 +13,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tidak ada file yang diunggah' }, { status: 400 });
     }
 
-    const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
-    if (!email || !privateKey) {
+    if (!clientId || !clientSecret || !refreshToken) {
       return NextResponse.json({ 
-        error: 'Sistem belum siap. Kunci Service Account belum dimasukkan ke Environment Variables.' 
+        error: 'Sistem belum siap. Kredensial OAuth (Client ID, Secret, Refresh Token) belum dimasukkan ke Environment Variables.' 
       }, { status: 500 });
     }
 
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: email,
-        private_key: privateKey,
-      },
-      scopes: ['https://www.googleapis.com/auth/drive'],
+    const oauth2Client = new google.auth.OAuth2(
+      clientId,
+      clientSecret,
+      "https://developers.google.com/oauthplayground"
+    );
+
+    oauth2Client.setCredentials({
+      refresh_token: refreshToken
     });
 
-    const drive = google.drive({ version: 'v3', auth });
+    const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
     // 1. Convert File to Stream
     const arrayBuffer = await file.arrayBuffer();
