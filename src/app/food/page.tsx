@@ -15,7 +15,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 export default function FoodCatalogPage() {
   const [foods, setFoods] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentFood, setCurrentFood] = useState({ id: '', name: '', rating: 5, price: '$$', location: '', review: '' });
+  const [currentFood, setCurrentFood] = useState({ id: '', name: '', rating: 5, price: '$$', location: '', review: '', imageUrl: '' });
 
   useEffect(() => {
     const q = query(collection(db, 'foods'), orderBy('createdAt', 'desc'));
@@ -28,6 +28,16 @@ export default function FoodCatalogPage() {
 
   const handleSave = async () => {
     if (!currentFood.name.trim()) return;
+    
+    // Transform GDrive links to direct image links
+    let finalImageUrl = currentFood.imageUrl;
+    if (finalImageUrl.includes('drive.google.com/file/d/')) {
+      const match = finalImageUrl.match(/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        finalImageUrl = `https://drive.google.com/uc?id=${match[1]}`;
+      }
+    }
+
     try {
       if (currentFood.id) {
         await updateDoc(doc(db, 'foods', currentFood.id), {
@@ -35,7 +45,8 @@ export default function FoodCatalogPage() {
           rating: currentFood.rating,
           price: currentFood.price,
           location: currentFood.location,
-          review: currentFood.review
+          review: currentFood.review,
+          imageUrl: finalImageUrl
         });
       } else {
         await addDoc(collection(db, 'foods'), {
@@ -44,6 +55,7 @@ export default function FoodCatalogPage() {
           price: currentFood.price,
           location: currentFood.location,
           review: currentFood.review,
+          imageUrl: finalImageUrl,
           createdAt: serverTimestamp()
         });
       }
@@ -64,8 +76,12 @@ export default function FoodCatalogPage() {
     }
   };
 
-  const openEditor = (food = { id: '', name: '', rating: 5, price: '$$', location: '', review: '' }) => {
-    setCurrentFood(food);
+  const openEditor = (food: any = null) => {
+    if (food) {
+      setCurrentFood({ ...food, imageUrl: food.imageUrl || '' });
+    } else {
+      setCurrentFood({ id: '', name: '', rating: 5, price: '$$', location: '', review: '', imageUrl: '' });
+    }
     setIsEditing(true);
   };
 
@@ -113,6 +129,18 @@ export default function FoodCatalogPage() {
                   className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-colors"
                   placeholder="Misal: Sate Klatak Pak Pong"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-400">Link Foto (Google Drive / URL Bebas)</label>
+                <input 
+                  type="text"
+                  value={currentFood.imageUrl}
+                  onChange={e => setCurrentFood({...currentFood, imageUrl: e.target.value})}
+                  className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-colors"
+                  placeholder="Paste link foto dari Google Drive di sini..."
+                />
+                <p className="text-xs text-gray-500 mt-1">Pastikan link Google Drive Anda disetting ke "Anyone with the link".</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -219,44 +247,60 @@ export default function FoodCatalogPage() {
         {foods.map((food) => (
           <div 
             key={food.id} 
-            className="bg-darkcard border border-gray-800 p-5 rounded-2xl relative overflow-hidden flex flex-col group hover:border-gray-700 transition-all"
+            className="bg-darkcard border border-gray-800 rounded-2xl relative overflow-hidden flex flex-col group hover:border-gray-700 transition-all"
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl pointer-events-none -mr-4 -mt-4" />
-            
-            <div className="flex justify-between items-start mb-3 relative z-10">
-              <h3 className="text-lg font-bold text-gray-100 pr-8 leading-tight">{food.name}</h3>
-              <button onClick={() => openEditor(food)} className="absolute top-0 right-0 p-1 bg-gray-800/50 rounded-lg text-gray-400 hover:text-white transition-colors">
-                <Edit3 className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <div className="flex items-center gap-4 mb-4 relative z-10">
-              <div className="flex items-center gap-1">
-                {renderStars(food.rating)}
+            {food.imageUrl ? (
+              <div className="w-full h-40 bg-gray-900 relative">
+                <img src={food.imageUrl} alt={food.name} className="w-full h-full object-cover" />
+                <button onClick={() => openEditor(food)} className="absolute top-2 right-2 p-1.5 bg-black/50 backdrop-blur rounded-lg text-gray-300 hover:text-white transition-colors">
+                  <Edit3 className="w-4 h-4" />
+                </button>
               </div>
-              <div className="flex items-center gap-1 text-green-500 text-sm font-bold bg-green-500/10 px-2 py-0.5 rounded">
-                {food.price}
+            ) : (
+              <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-full blur-2xl pointer-events-none -mr-4 -mt-4" />
+            )}
+            
+            <div className="p-5 flex-1 flex flex-col">
+              {!food.imageUrl && (
+                <div className="flex justify-between items-start mb-3 relative z-10">
+                  <h3 className="text-lg font-bold text-gray-100 pr-8 leading-tight">{food.name}</h3>
+                  <button onClick={() => openEditor(food)} className="absolute top-0 right-0 p-1 bg-gray-800/50 rounded-lg text-gray-400 hover:text-white transition-colors">
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              {food.imageUrl && (
+                <h3 className="text-lg font-bold text-gray-100 mb-3 leading-tight">{food.name}</h3>
+              )}
+              
+              <div className="flex items-center gap-4 mb-4 relative z-10">
+                <div className="flex items-center gap-1">
+                  {renderStars(food.rating)}
+                </div>
+                <div className="flex items-center gap-1 text-green-500 text-sm font-bold bg-green-500/10 px-2 py-0.5 rounded">
+                  {food.price}
+                </div>
               </div>
-            </div>
 
-            {food.location && (
-              <div className="flex items-start gap-2 text-sm text-gray-400 mb-4 bg-[#050608] p-3 rounded-xl border border-gray-800 relative z-10">
-                <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                {food.location.startsWith('http') ? (
-                  <a href={food.location} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:underline line-clamp-2 break-all">
-                    Buka di Google Maps
-                  </a>
-                ) : (
-                  <p className="line-clamp-2">{food.location}</p>
-                )}
-              </div>
-            )}
-            
-            {food.review && (
-              <div className="text-gray-300 text-sm leading-relaxed border-l-2 border-orange-500/30 pl-3 italic relative z-10">
-                "{food.review}"
-              </div>
-            )}
+              {food.location && (
+                <div className="flex items-start gap-2 text-sm text-gray-400 mb-4 bg-[#050608] p-3 rounded-xl border border-gray-800 relative z-10">
+                  <MapPin className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                  {food.location.startsWith('http') ? (
+                    <a href={food.location} target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:underline line-clamp-2 break-all">
+                      Buka di Google Maps
+                    </a>
+                  ) : (
+                    <p className="line-clamp-2">{food.location}</p>
+                  )}
+                </div>
+              )}
+              
+              {food.review && (
+                <div className="text-gray-300 text-sm leading-relaxed border-l-2 border-orange-500/30 pl-3 italic relative z-10">
+                  "{food.review}"
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
