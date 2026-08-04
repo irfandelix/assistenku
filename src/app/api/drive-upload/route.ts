@@ -35,6 +35,38 @@ export async function POST(request: Request) {
 
     const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
+    // 0. Search or create subfolder for the food
+    let targetFolderId = parentFolderId;
+    try {
+      // Search if folder exists
+      const query = `mimeType='application/vnd.google-apps.folder' and name='${foodName.replace(/'/g, "\\'")}' and '${parentFolderId}' in parents and trashed=false`;
+      const searchRes = await drive.files.list({
+        q: query,
+        fields: 'files(id, name)',
+        spaces: 'drive'
+      });
+
+      if (searchRes.data.files && searchRes.data.files.length > 0) {
+        // Folder exists
+        targetFolderId = searchRes.data.files[0].id!;
+      } else {
+        // Create new folder
+        const folderRes = await drive.files.create({
+          requestBody: {
+            name: foodName,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [parentFolderId]
+          },
+          fields: 'id'
+        });
+        if (folderRes.data.id) {
+          targetFolderId = folderRes.data.id;
+        }
+      }
+    } catch (folderError) {
+      console.warn("Could not create/search folder, falling back to root folder", folderError);
+    }
+
     // 1. Convert File to Stream
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -45,8 +77,8 @@ export async function POST(request: Request) {
     // 2. Upload file to specific folder
     const response = await drive.files.create({
       requestBody: {
-        name: `${foodName}_${Date.now()}_${file.name}`,
-        parents: [parentFolderId],
+        name: `${Date.now()}_${file.name}`,
+        parents: [targetFolderId],
       },
       media: {
         mimeType: file.type,
