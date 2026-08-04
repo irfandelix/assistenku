@@ -151,14 +151,22 @@ export default function FoodCatalogPage() {
                     placeholder="Bisa alamat atau link Google Maps"
                   />
                   <button 
-                    onClick={() => {
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
                       if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition((position) => {
-                          const lat = position.coords.latitude;
-                          const lng = position.coords.longitude;
-                          const mapsLink = `https://maps.google.com/?q=${lat},${lng}`;
-                          setCurrentFood({...currentFood, location: mapsLink});
-                        }, () => alert("Gagal mengambil lokasi. Pastikan GPS aktif."));
+                        navigator.geolocation.getCurrentPosition(
+                          (position) => {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            const mapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+                            setCurrentFood({...currentFood, location: mapsLink});
+                          }, 
+                          (error) => {
+                            alert("Gagal mengambil lokasi. Error: " + error.message + ". Pastikan izin lokasi (GPS) di browser/HP Anda aktif.");
+                          },
+                          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                        );
                       } else {
                         alert("Browser Anda tidak mendukung fitur lokasi.");
                       }
