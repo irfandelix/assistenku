@@ -132,15 +132,57 @@ export default function FoodCatalogPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-400">Link Foto (Google Drive / URL Bebas)</label>
-                <input 
-                  type="text"
-                  value={currentFood.imageUrl}
-                  onChange={e => setCurrentFood({...currentFood, imageUrl: e.target.value})}
-                  className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-colors"
-                  placeholder="Paste link foto dari Google Drive di sini..."
-                />
-                <p className="text-xs text-gray-500 mt-1">Pastikan link Google Drive Anda disetting ke "Anyone with the link".</p>
+                <label className="block text-sm font-medium mb-1 text-gray-400">Link Foto atau Unggah Langsung</label>
+                <div className="flex flex-col gap-2">
+                  <input 
+                    type="text"
+                    value={currentFood.imageUrl}
+                    onChange={e => setCurrentFood({...currentFood, imageUrl: e.target.value})}
+                    className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-colors"
+                    placeholder="Paste link foto atau..."
+                  />
+                  
+                  <div className="relative border-2 border-dashed border-gray-800 rounded-xl p-4 hover:border-orange-500 transition-colors cursor-pointer bg-[#050608] flex items-center justify-center">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        
+                        try {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          formData.append('foodName', currentFood.name || 'Kuliner');
+                          
+                          // Tampilkan pesan loading sementata di input URL
+                          setCurrentFood({...currentFood, imageUrl: 'Mengunggah ke Google Drive...'});
+                          
+                          const res = await fetch('/api/drive-upload', {
+                            method: 'POST',
+                            body: formData
+                          });
+                          
+                          const data = await res.json();
+                          if (data.success) {
+                            setCurrentFood({...currentFood, imageUrl: data.url});
+                          } else {
+                            alert(data.error);
+                            setCurrentFood({...currentFood, imageUrl: ''});
+                          }
+                        } catch (err: any) {
+                          alert('Gagal mengunggah: ' + err.message);
+                          setCurrentFood({...currentFood, imageUrl: ''});
+                        }
+                      }}
+                    />
+                    <div className="flex flex-col items-center gap-1 text-gray-400 pointer-events-none">
+                      <Plus className="w-5 h-5 text-orange-500" />
+                      <span className="text-xs font-medium">Atau ketuk untuk pilih foto dari HP/Laptop</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
