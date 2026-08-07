@@ -22,7 +22,7 @@ const MOODS = [
 export default function MoodPage() {
   const [moods, setMoods] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentEntry, setCurrentEntry] = useState({ id: '', moodId: 'happy', note: '' });
+  const [currentEntry, setCurrentEntry] = useState({ id: '', moodId: 'happy', title: '', note: '' });
 
   useEffect(() => {
     const q = query(collection(db, 'moods'), orderBy('createdAt', 'desc'), limit(30));
@@ -38,11 +38,13 @@ export default function MoodPage() {
       if (currentEntry.id) {
         await updateDoc(doc(db, 'moods', currentEntry.id), {
           moodId: currentEntry.moodId,
+          title: currentEntry.title || '',
           note: currentEntry.note
         });
       } else {
         await addDoc(collection(db, 'moods'), {
           moodId: currentEntry.moodId,
+          title: currentEntry.title || '',
           note: currentEntry.note,
           createdAt: serverTimestamp()
         });
@@ -64,7 +66,7 @@ export default function MoodPage() {
     }
   };
 
-  const openEditor = (e = { id: '', moodId: 'happy', note: '' }) => {
+  const openEditor = (e = { id: '', moodId: 'happy', title: '', note: '' }) => {
     setCurrentEntry(e);
     setIsEditing(true);
   };
@@ -125,7 +127,17 @@ export default function MoodPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-400">Cerita singkat (Opsional)</label>
+                <label className="block text-sm font-medium mb-1 text-gray-400">Judul Alasan (Singkat)</label>
+                <input 
+                  type="text"
+                  value={currentEntry.title || ''}
+                  onChange={e => setCurrentEntry({...currentEntry, title: e.target.value})}
+                  className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-neon transition-colors mb-4"
+                  placeholder="Misal: Dikasih bonus bos!"
+                  maxLength={50}
+                />
+                
+                <label className="block text-sm font-medium mb-1 text-gray-400">Cerita Detail (Opsional)</label>
                 <textarea 
                   value={currentEntry.note}
                   onChange={e => setCurrentEntry({...currentEntry, note: e.target.value})}
@@ -179,8 +191,11 @@ export default function MoodPage() {
                   <h3 className={cn("font-bold text-sm uppercase tracking-wide", config.color)}>{config.label}</h3>
                   <span className="text-xs text-gray-500">{dateStr}</span>
                 </div>
+                {m.title && (
+                  <h4 className="text-gray-100 font-medium text-base mb-1">{m.title}</h4>
+                )}
                 {m.note && (
-                  <p className="text-gray-300 text-sm line-clamp-2 leading-relaxed">{m.note}</p>
+                  <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed">{m.note}</p>
                 )}
               </div>
             </div>
