@@ -29,9 +29,26 @@ export default function GoalsPage() {
   }, []);
 
   const handleSave = async () => {
-    if (!currentGoal.title.trim() || !currentGoal.targetAmount) return;
-    const targetNum = parseFloat(currentGoal.targetAmount);
-    const currentNum = currentGoal.currentAmount ? parseFloat(currentGoal.currentAmount) : 0;
+    if (!currentGoal.title || !currentGoal.title.toString().trim()) {
+      alert("Judul / Impian harus diisi!");
+      return;
+    }
+    if (!currentGoal.targetAmount) {
+      alert("Target terkumpul harus diisi berupa angka!");
+      return;
+    }
+    
+    // Hapus karakter non-digit jika pengguna mengetik titik/koma
+    const rawTarget = currentGoal.targetAmount.toString().replace(/[^0-9]/g, '');
+    const targetNum = parseFloat(rawTarget);
+    
+    if (isNaN(targetNum) || targetNum <= 0) {
+      alert("Target terkumpul tidak valid!");
+      return;
+    }
+
+    const rawCurrent = currentGoal.currentAmount ? currentGoal.currentAmount.toString().replace(/[^0-9]/g, '') : '0';
+    const currentNum = parseFloat(rawCurrent) || 0;
     
     try {
       if (currentGoal.id) {
@@ -55,9 +72,17 @@ export default function GoalsPage() {
   };
 
   const handleAddFund = async () => {
-    if (!fundAmount || !currentGoal.id) return;
-    const addNum = parseFloat(fundAmount);
-    if (addNum <= 0) return;
+    if (!fundAmount || !currentGoal.id) {
+      alert("Nominal harus diisi!");
+      return;
+    }
+    const rawAdd = fundAmount.toString().replace(/[^0-9]/g, '');
+    const addNum = parseFloat(rawAdd);
+    
+    if (isNaN(addNum) || addNum <= 0) {
+      alert("Nominal tidak valid!");
+      return;
+    }
 
     try {
       const newTotal = (parseFloat(currentGoal.currentAmount) || 0) + addNum;
@@ -139,7 +164,7 @@ export default function GoalsPage() {
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-400">Target Terkumpul (Rp)</label>
                 <input 
-                  type="number"
+                  type="text" inputMode="numeric"
                   value={currentGoal.targetAmount}
                   onChange={e => setCurrentGoal({...currentGoal, targetAmount: e.target.value})}
                   className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-neon transition-colors"
@@ -150,7 +175,7 @@ export default function GoalsPage() {
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-400">Tabungan Awal (Opsional)</label>
                 <input 
-                  type="number"
+                  type="text" inputMode="numeric"
                   value={currentGoal.currentAmount}
                   onChange={e => setCurrentGoal({...currentGoal, currentAmount: e.target.value})}
                   className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-neon transition-colors"
@@ -192,7 +217,7 @@ export default function GoalsPage() {
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-400">Nominal Ditabung (Rp)</label>
                 <input 
-                  type="number"
+                  type="text" inputMode="numeric"
                   value={fundAmount}
                   onChange={e => setFundAmount(e.target.value)}
                   className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-neon transition-colors"
