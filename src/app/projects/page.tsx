@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import Link from 'next/link';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -125,6 +126,18 @@ export default function ProjectsPage() {
       financeSynced: project.financeSynced || false
     });
     setIsEditing(true);
+  };
+
+  const handleShareWa = (project: any) => {
+    const publicUrl = `${window.location.origin}/p/${project.id}`;
+    const text = `Halo! Ini file untuk proyek *${project.title}*. Silakan diunduh/dilihat melalui link berikut ya:\n\n${publicUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleCopyLink = (project: any) => {
+    const publicUrl = `${window.location.origin}/p/${project.id}`;
+    navigator.clipboard.writeText(publicUrl);
+    alert('Link portal proyek berhasil disalin ke clipboard!');
   };
 
   return (
@@ -343,38 +356,31 @@ export default function ProjectsPage() {
             </div>
             
             <div className="flex gap-2 mt-4 pt-4 border-t border-gray-800">
-              <a 
-                href={project.link || '#'} 
-                target={project.link ? "_blank" : "_self"} 
-                rel="noreferrer"
+              <Link 
+                href={project.link ? `/p/${project.id}` : '#'} 
                 className={cn(
                   "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all",
                   project.link 
                     ? "bg-[#050608] border border-gray-700 hover:border-gray-600 text-gray-300 hover:text-white shadow-sm"
-                    : "bg-[#050608] border border-transparent text-gray-600 cursor-not-allowed"
+                    : "bg-[#050608] border border-transparent text-gray-600 cursor-not-allowed pointer-events-none"
                 )}
               >
                 <ExternalLink className="w-4 h-4" />
-                {project.link ? 'Buka Link Drive' : 'Belum Ada Link'}
-              </a>
+                {project.link ? 'Buka Portal Klien' : 'Belum Ada File'}
+              </Link>
               {project.link && (
                 <>
-                  <a 
-                    href={`https://wa.me/?text=${encodeURIComponent(`Halo! Ini file untuk proyek *${project.title}*. Silakan diunduh/dilihat melalui link Google Drive berikut ya:\n\n${project.link}`)}`}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button 
+                    onClick={() => handleShareWa(project)}
                     className="px-4 bg-[#25D366]/10 border border-[#25D366]/30 hover:bg-[#25D366]/20 text-[#25D366] rounded-xl transition-colors shrink-0 flex items-center justify-center shadow-sm"
                     title="Kirim ke WhatsApp"
                   >
                     <MessageCircle className="w-4 h-4" />
-                  </a>
+                  </button>
                   <button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(project.link);
-                      alert('Link berhasil disalin ke clipboard!');
-                    }}
+                    onClick={() => handleCopyLink(project)}
                     className="px-4 bg-[#050608] border border-gray-700 hover:border-gray-600 text-gray-300 hover:text-white rounded-xl transition-colors shrink-0 flex items-center justify-center shadow-sm"
-                    title="Copy Link"
+                    title="Copy Link Portal"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
