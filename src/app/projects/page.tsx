@@ -176,14 +176,56 @@ export default function ProjectsPage() {
               </div>
               {currentProject.id && (
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-400">Link Google Drive</label>
-                  <input 
-                    type="url"
-                    value={currentProject.link}
-                    onChange={e => setCurrentProject({...currentProject, link: e.target.value})}
-                    className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
-                    placeholder="https://drive.google.com/..."
-                  />
+                  <label className="block text-sm font-medium mb-1 text-gray-400">Pustaka Proyek (File ZIP/PDF atau Link Drive)</label>
+                  <div className="flex flex-col gap-2">
+                    <input 
+                      type="text"
+                      value={currentProject.link}
+                      onChange={e => setCurrentProject({...currentProject, link: e.target.value})}
+                      className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
+                      placeholder="Paste link Drive atau unggah file di bawah..."
+                    />
+                    
+                    <div className="relative border-2 border-dashed border-gray-800 rounded-xl p-4 hover:border-accent-blue transition-colors cursor-pointer bg-[#050608] flex items-center justify-center">
+                      <input 
+                        type="file" 
+                        accept=".zip,.rar,.pdf,.doc,.docx,.ppt,.pptx"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          try {
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            formData.append('foodName', `Project_${currentProject.title || 'Draft'}`);
+                            
+                            setCurrentProject({...currentProject, link: 'Mengunggah ke Google Drive...'});
+                            
+                            const res = await fetch('/api/drive-upload', {
+                              method: 'POST',
+                              body: formData
+                            });
+                            
+                            const data = await res.json();
+                            if (data.success) {
+                              setCurrentProject({...currentProject, link: data.webViewLink || data.url});
+                            } else {
+                              alert(data.error);
+                              setCurrentProject({...currentProject, link: ''});
+                            }
+                          } catch (err: any) {
+                            alert('Gagal mengunggah: ' + err.message);
+                            setCurrentProject({...currentProject, link: ''});
+                          }
+                        }}
+                      />
+                      <div className="flex flex-col items-center gap-1 text-gray-400 pointer-events-none text-center">
+                        <Plus className="w-5 h-5 text-accent-blue" />
+                        <span className="text-xs font-medium">Atau ketuk untuk unggah file (ZIP/PDF) langsung ke Drive</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
               {currentProject.id && (

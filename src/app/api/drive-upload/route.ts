@@ -107,7 +107,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      url: directImageUrl 
+      url: directImageUrl,
+      webViewLink: response.data.webViewLink
     });
 
   } catch (error: any) {
