@@ -71,15 +71,32 @@ export default function PublicProjectPage({ params }: { params: { id: string } }
           </div>
         </div>
 
-        <a 
-          href={project.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full bg-accent-blue text-white py-4 px-6 rounded-xl font-bold hover:bg-blue-600 transition-transform active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,99,235,0.3)] relative z-10"
-        >
-          <Download className="w-5 h-5" />
-          Unduh File Proyek
-        </a>
+        <div className="space-y-3 relative z-10">
+          {project.files && project.files.length > 0 ? (
+            project.files.map((file: any, index: number) => (
+              <a 
+                key={index}
+                href={file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-accent-blue text-white py-4 px-6 rounded-xl font-bold hover:bg-blue-600 transition-transform active:scale-95 flex items-center justify-between shadow-[0_0_20px_rgba(37,99,235,0.2)]"
+              >
+                <span className="truncate pr-4">{file.title}</span>
+                <Download className="w-5 h-5 shrink-0" />
+              </a>
+            ))
+          ) : project.link ? (
+            <a 
+              href={project.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-accent-blue text-white py-4 px-6 rounded-xl font-bold hover:bg-blue-600 transition-transform active:scale-95 flex items-center justify-between shadow-[0_0_20px_rgba(37,99,235,0.2)]"
+            >
+              <span>Unduh File Proyek</span>
+              <Download className="w-5 h-5 shrink-0" />
+            </a>
+          ) : null}
+        </div>
 
         <div className="mt-8 text-center relative z-10">
           <p className="text-xs text-gray-600">Dikirim secara otomatis melalui sistem manajemen proyek cerdas.</p>

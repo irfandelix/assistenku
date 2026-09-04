@@ -15,7 +15,11 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentProject, setCurrentProject] = useState({ id: '', title: '', client: '', link: '', isPaid: false, amountPaid: '', financeSynced: false });
+  const [currentProject, setCurrentProject] = useState({ id: '', title: '', client: '', link: '', files: [] as {title: string, url: string}[], isPaid: false, amountPaid: '', financeSynced: false });
+
+  const hasFiles = (project: any) => {
+    return (project.files && project.files.length > 0) || (project.link && project.link.trim() !== '');
+  };
 
   useEffect(() => {
     const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
@@ -49,7 +53,8 @@ export default function ProjectsPage() {
         await updateDoc(doc(db, 'projects', currentProject.id), {
           title: currentProject.title,
           client: currentProject.client,
-          link: currentProject.link,
+          link: currentProject.files && currentProject.files.length > 0 ? currentProject.files[0].url : '',
+          files: currentProject.files || [],
           isPaid: currentProject.isPaid,
           amountPaid: currentProject.amountPaid,
           financeSynced: isNowSynced
@@ -58,7 +63,8 @@ export default function ProjectsPage() {
         await addDoc(collection(db, 'projects'), {
           title: currentProject.title,
           client: currentProject.client,
-          link: currentProject.link,
+          link: currentProject.files && currentProject.files.length > 0 ? currentProject.files[0].url : '',
+          files: currentProject.files || [],
           isPaid: currentProject.isPaid,
           amountPaid: currentProject.amountPaid,
           financeSynced: isNowSynced,
@@ -119,9 +125,14 @@ export default function ProjectsPage() {
     }
   };
 
-  const openEditor = (project = { id: '', title: '', client: '', link: '', isPaid: false, amountPaid: '', financeSynced: false }) => {
+  const openEditor = (project: any = { id: '', title: '', client: '', link: '', files: [], isPaid: false, amountPaid: '', financeSynced: false }) => {
+    let initialFiles = project.files || [];
+    if (initialFiles.length === 0 && project.link && project.link.trim() !== '') {
+      initialFiles = [{ title: 'File Proyek Utama', url: project.link }];
+    }
     setCurrentProject({
       ...project,
+      files: initialFiles,
       amountPaid: project.amountPaid || '',
       financeSynced: project.financeSynced || false
     });
@@ -189,65 +200,85 @@ export default function ProjectsPage() {
               </div>
               {currentProject.id && (
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-400">Pustaka Proyek (File ZIP/PDF atau Link Drive)</label>
-                  <div className="flex flex-col gap-2">
-                    <input 
-                      type="text"
-                      value={currentProject.link}
-                      onChange={e => setCurrentProject({...currentProject, link: e.target.value})}
-                      className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
-                      placeholder="Paste link Drive atau unggah file di bawah..."
-                    />
-                    
-                    <div className="relative border-2 border-dashed border-gray-800 rounded-xl p-4 hover:border-accent-blue transition-colors cursor-pointer bg-[#050608] flex items-center justify-center">
-                      <input 
-                        type="file" 
-                        accept=".zip,.rar,.pdf,.doc,.docx,.ppt,.pptx"
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          
-                          try {
-                            const formData = new FormData();
-                            formData.append('file', file);
-                            formData.append('foodName', `Project_${currentProject.title || 'Draft'}`);
-                            
-                            setCurrentProject({...currentProject, link: 'Mengunggah ke Google Drive...'});
-                            
-                            const res = await fetch('/api/drive-upload', {
-                              method: 'POST',
-                              body: formData
-                            });
-                            
-                            const data = await res.json();
-                            if (data.success) {
-                              setCurrentProject({...currentProject, link: data.webViewLink || data.url});
-                            } else {
-                              alert(data.error);
-                              setCurrentProject({...currentProject, link: ''});
-                            }
-                          } catch (err: any) {
-                            alert('Gagal mengunggah: ' + err.message);
-                            setCurrentProject({...currentProject, link: ''});
-                          }
-                        }}
-                      />
-                      <div className="flex flex-col items-center gap-1 text-gray-400 pointer-events-none text-center">
-                        <Plus className="w-5 h-5 text-accent-blue" />
-                        <span className="text-xs font-medium">Atau ketuk untuk unggah file (ZIP/PDF) langsung ke Drive</span>
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Pustaka Proyek (Daftar File)</label>
+                  <div className="space-y-3 mb-3">
+                    {currentProject.files && currentProject.files.map((file: any, index: number) => (
+                      <div key={index} className="flex items-center gap-2 bg-[#050608] p-3 rounded-xl border border-gray-800">
+                        <input 
+                          type="text" 
+                          value={file.title}
+                          onChange={(e) => {
+                            const newFiles = [...currentProject.files];
+                            newFiles[index].title = e.target.value;
+                            setCurrentProject({...currentProject, files: newFiles});
+                          }}
+                          className="flex-1 bg-transparent border-none outline-none text-sm text-gray-100 placeholder-gray-600"
+                          placeholder="Nama file (misal: Peta Tapak)"
+                        />
+                        <a href={file.url} target="_blank" rel="noreferrer" className="p-2 text-accent-blue hover:bg-accent-blue/10 rounded-lg transition-colors">
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                        <button 
+                          onClick={() => {
+                            const newFiles = currentProject.files.filter((_, i) => i !== index);
+                            setCurrentProject({...currentProject, files: newFiles});
+                          }}
+                          className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
+                    ))}
+                  </div>
+                  
+                  <div className="relative border-2 border-dashed border-gray-800 rounded-xl p-4 hover:border-accent-blue transition-colors cursor-pointer bg-[#050608] flex items-center justify-center">
+                    <input 
+                      type="file" 
+                      accept=".zip,.rar,.pdf,.doc,.docx,.ppt,.pptx"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        
+                        try {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          formData.append('foodName', `Project_${currentProject.title || 'Draft'}`);
+                          
+                          const loadingFiles = [...currentProject.files, { title: 'Mengunggah...', url: '#' }];
+                          setCurrentProject({...currentProject, files: loadingFiles});
+                          
+                          const res = await fetch('/api/drive-upload', {
+                            method: 'POST',
+                            body: formData
+                          });
+                          
+                          const data = await res.json();
+                          if (data.success) {
+                            const newFiles = [...currentProject.files];
+                            newFiles.push({
+                              title: file.name.split('.')[0] || 'File Baru',
+                              url: data.webViewLink || data.url
+                            });
+                            setCurrentProject({...currentProject, files: newFiles});
+                          } else {
+                            alert(data.error);
+                            setCurrentProject({...currentProject, files: currentProject.files});
+                          }
+                        } catch (err: any) {
+                          alert('Gagal mengunggah: ' + err.message);
+                          setCurrentProject({...currentProject, files: currentProject.files});
+                        }
+                      }}
+                    />
+                    <div className="flex flex-col items-center gap-1 text-gray-400 pointer-events-none text-center">
+                      <Plus className="w-5 h-5 text-accent-blue" />
+                      <span className="text-xs font-medium">Tambah File Proyek (ZIP/PDF/Doc)</span>
                     </div>
                   </div>
                 </div>
               )}
               {currentProject.id && (
-                currentProject.link.trim() === '' ? (
-                  <div className="bg-accent-orange/10 p-4 rounded-xl border border-accent-orange/20 flex gap-3 mt-4">
-                    <AlertCircle className="w-5 h-5 text-accent-orange shrink-0" />
-                    <p className="text-sm text-accent-orange/90">Masukkan Link Google Drive proyek yang sudah selesai terlebih dahulu untuk membuka menu pelunasan.</p>
-                  </div>
-                ) : (
                   <>
                     <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-800">
                       <input 
@@ -281,7 +312,6 @@ export default function ProjectsPage() {
                       </div>
                     )}
                   </>
-                )
               )}
             </div>
             
@@ -322,7 +352,7 @@ export default function ProjectsPage() {
                     <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-neon/10 text-neon uppercase tracking-wider flex items-center gap-1">
                       <CheckCircle className="w-3 h-3" /> Completed
                     </span>
-                  ) : (project.link && project.link.trim() !== '') ? (
+                  ) : hasFiles(project) ? (
                     <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-accent-blue/10 text-accent-blue uppercase tracking-wider flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> In Progress
                     </span>
@@ -341,34 +371,32 @@ export default function ProjectsPage() {
                 </div>
               </div>
               
-              {(!project.link || project.link.trim() === '') ? null : (
-                <button 
-                  onClick={() => toggleStatus(project)}
-                  className={cn(
-                  "p-2 rounded-xl transition-colors active:scale-95 ml-2",
-                  project.isPaid 
-                    ? "bg-neon/10 text-neon hover:bg-neon/20" 
-                    : "bg-gray-800 text-gray-400 hover:text-white"
-                )}>
-                  {project.isPaid ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
-                </button>
-              )}
+              <button 
+                onClick={() => toggleStatus(project)}
+                className={cn(
+                "p-2 rounded-xl transition-colors active:scale-95 ml-2",
+                project.isPaid 
+                  ? "bg-neon/10 text-neon hover:bg-neon/20" 
+                  : "bg-gray-800 text-gray-400 hover:text-white"
+              )}>
+                {project.isPaid ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+              </button>
             </div>
             
             <div className="flex gap-2 mt-4 pt-4 border-t border-gray-800">
               <Link 
-                href={project.link ? `/p/${project.id}` : '#'} 
+                href={hasFiles(project) ? `/p/${project.id}` : '#'} 
                 className={cn(
                   "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all",
-                  project.link 
+                  hasFiles(project)
                     ? "bg-[#050608] border border-gray-700 hover:border-gray-600 text-gray-300 hover:text-white shadow-sm"
                     : "bg-[#050608] border border-transparent text-gray-600 cursor-not-allowed pointer-events-none"
                 )}
               >
                 <ExternalLink className="w-4 h-4" />
-                {project.link ? 'Buka Portal Klien' : 'Belum Ada File'}
+                {hasFiles(project) ? 'Buka Portal Klien' : 'Belum Ada File'}
               </Link>
-              {project.link && (
+              {hasFiles(project) && (
                 <>
                   <button 
                     onClick={() => handleShareWa(project)}
