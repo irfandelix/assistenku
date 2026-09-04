@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, CheckCircle2, Circle, ExternalLink, MapPin, X, Save, Trash2, Copy, AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, ExternalLink, MapPin, X, Save, Trash2, Copy, AlertCircle, Clock, CheckCircle, MessageCircle } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { clsx } from 'clsx';
@@ -358,16 +358,27 @@ export default function ProjectsPage() {
                 {project.link ? 'Buka Link Drive' : 'Belum Ada Link'}
               </a>
               {project.link && (
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(project.link);
-                    alert('Link berhasil disalin ke clipboard!');
-                  }}
-                  className="px-4 bg-[#050608] border border-gray-700 hover:border-gray-600 text-gray-300 hover:text-white rounded-xl transition-colors shrink-0 flex items-center justify-center shadow-sm"
-                  title="Copy Link"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
+                <>
+                  <a 
+                    href={`https://wa.me/?text=${encodeURIComponent(`Halo! Ini file untuk proyek *${project.title}*. Silakan diunduh/dilihat melalui link Google Drive berikut ya:\n\n${project.link}`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 bg-[#25D366]/10 border border-[#25D366]/30 hover:bg-[#25D366]/20 text-[#25D366] rounded-xl transition-colors shrink-0 flex items-center justify-center shadow-sm"
+                    title="Kirim ke WhatsApp"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </a>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(project.link);
+                      alert('Link berhasil disalin ke clipboard!');
+                    }}
+                    className="px-4 bg-[#050608] border border-gray-700 hover:border-gray-600 text-gray-300 hover:text-white rounded-xl transition-colors shrink-0 flex items-center justify-center shadow-sm"
+                    title="Copy Link"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </>
               )}
             </div>
           </div>
