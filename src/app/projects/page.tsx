@@ -262,18 +262,21 @@ export default function ProjectsPage() {
         </button>
       </header>
 
-      {/* Editor Modal */}
+      {/* Editor Fullscreen Overlay (Acts like a separate page) */}
       {isEditing && (
-        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-darkcard border border-gray-800 w-full max-w-xl rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 my-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-100">{currentProject.id ? 'Edit Proyek' : 'Proyek Baru'}</h2>
-              <button onClick={() => setIsEditing(false)} className="p-2 text-gray-500 hover:bg-gray-800 rounded-full">
-                <X className="w-5 h-5" />
-              </button>
+        <div className="fixed inset-0 z-[100] bg-[#0B0E14] overflow-y-auto animate-in slide-in-from-bottom-8 duration-300">
+          <div className="max-w-4xl mx-auto w-full p-4 md:p-8 md:py-12">
+            <div className="flex justify-between items-center mb-8 border-b border-gray-800 pb-6">
+              <div>
+                <button onClick={() => setIsEditing(false)} className="text-accent-blue hover:text-blue-400 mb-2 flex items-center gap-2 text-sm font-medium transition-colors">
+                  &larr; Kembali ke Daftar Proyek
+                </button>
+                <h2 className="text-3xl font-bold text-gray-100">{currentProject.id ? 'Edit Proyek' : 'Buat Proyek Baru'}</h2>
+              </div>
             </div>
             
-            <div className="space-y-4">
+            <div className="bg-darkcard border border-gray-800 rounded-3xl p-6 md:p-10 shadow-2xl mb-20">
+              <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium mb-1 text-gray-400">Nama Proyek</label>
@@ -451,18 +454,19 @@ export default function ProjectsPage() {
               )}
             </div>
             
-            <div className="mt-8 flex justify-between items-center pt-4 border-t border-gray-800">
+            <div className="mt-10 flex justify-between items-center pt-6 border-t border-gray-800">
               {currentProject.id ? (
-                <button onClick={() => handleDelete(currentProject.id)} className="text-red-500 font-medium hover:text-red-400 flex items-center gap-1 p-2">
-                  <Trash2 className="w-4 h-4" /> Hapus
+                <button onClick={() => handleDelete(currentProject.id)} className="text-red-500 font-medium hover:text-red-400 flex items-center gap-2 p-2 transition-colors">
+                  <Trash2 className="w-5 h-5" /> Hapus Proyek
                 </button>
               ) : <div></div>}
               <button 
                 onClick={handleSave}
-                className="bg-accent-blue text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-600 flex items-center gap-2 transition-colors active:scale-95"
+                className="bg-accent-blue text-white px-8 py-3.5 rounded-xl font-bold hover:bg-blue-600 flex items-center gap-2 transition-colors active:scale-95 shadow-lg shadow-blue-900/20"
               >
-                <Save className="w-4 h-4" /> Simpan
+                <Save className="w-5 h-5" /> Simpan Proyek
               </button>
+            </div>
             </div>
           </div>
         </div>
