@@ -502,6 +502,7 @@ export default function ProjectsPage() {
                 <Save className="w-5 h-5" /> Simpan Proyek
               </button>
             </div>
+            </div>
           </div>
         </div>
       ) : (
