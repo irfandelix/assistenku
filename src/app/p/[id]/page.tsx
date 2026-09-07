@@ -121,7 +121,7 @@ export default function PublicProjectPage(props: { params: Promise<{ id: string 
         <div className="bg-[#050608] border border-gray-800 rounded-2xl p-5 mb-8 relative z-10">
           <div className="flex items-start gap-3">
             <ShieldCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-400 leading-relaxed">
+            <p className="text-sm text-gray-400 leading-relaxed text-justify">
               File dan dokumen proyek Anda telah siap. Silakan klik tombol di bawah untuk mengunduhnya.
             </p>
           </div>
