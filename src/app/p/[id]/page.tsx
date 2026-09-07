@@ -26,6 +26,19 @@ export default function PublicProjectPage(props: { params: Promise<{ id: string 
           isResolved: false
         })
       });
+
+      // Send Telegram Notification
+      try {
+        const message = `<b>💬 Pesan Baru dari Klien!</b>\n\n<b>Proyek:</b> ${project.title}\n<b>Pesan:</b>\n<i>"${feedbackText.trim()}"</i>\n\n<a href="https://assistenku.vercel.app/projects">Buka Dashboard</a>`;
+        await fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+      } catch (notifyError) {
+        console.error("Failed to send telegram notification:", notifyError);
+      }
+
       setFeedbackSent(true);
       setFeedbackText('');
     } catch (error) {
