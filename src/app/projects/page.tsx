@@ -280,23 +280,24 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-500">
-      <header className="flex justify-between items-center">
-        <div>
-          <p className="text-accent-blue font-medium text-sm tracking-widest uppercase mb-1">Manajemen</p>
-          <h1 className="text-2xl font-bold text-gray-100">Daftar Proyek</h1>
-        </div>
-        <button 
-          onClick={() => openEditor()}
-          className="bg-accent-blue text-white p-3 rounded-xl shadow-lg hover:bg-blue-600 transition-transform active:scale-95"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
-      </header>
+      {!isEditing && (
+        <header className="flex justify-between items-center">
+          <div>
+            <p className="text-accent-blue font-medium text-sm tracking-widest uppercase mb-1">Manajemen</p>
+            <h1 className="text-2xl font-bold text-gray-100">Daftar Proyek</h1>
+          </div>
+          <button 
+            onClick={() => openEditor()}
+            className="bg-accent-blue text-white p-3 rounded-xl shadow-lg hover:bg-blue-600 transition-transform active:scale-95"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        </header>
+      )}
 
-      {/* Editor Fullscreen Overlay (Acts like a separate page) */}
-      {isEditing && (
-        <div className="fixed inset-0 z-[100] bg-[#0B0E14] overflow-y-auto animate-in slide-in-from-bottom-8 duration-300">
-          <div className="max-w-4xl mx-auto w-full p-4 md:p-8 md:py-12">
+      {isEditing ? (
+        <div className="animate-in fade-in slide-in-from-bottom-8 duration-300">
+          <div className="max-w-4xl mx-auto w-full py-4">
             <div className="flex justify-between items-center mb-8 border-b border-gray-800 pb-6">
               <div>
                 <button onClick={() => setIsEditing(false)} className="text-accent-blue hover:text-blue-400 mb-2 flex items-center gap-2 text-sm font-medium transition-colors">
@@ -501,14 +502,11 @@ export default function ProjectsPage() {
                 <Save className="w-5 h-5" /> Simpan Proyek
               </button>
             </div>
-            </div>
           </div>
         </div>
-      )}
-
-      {/* Project List */}
-      <div className="grid gap-4">
-        {projects.length === 0 && (
+      ) : (
+        <div className="grid gap-4 animate-in fade-in duration-300">
+          {projects.length === 0 && (
           <div className="text-center py-12 border border-dashed border-gray-800 rounded-3xl">
             <p className="text-gray-500">Belum ada proyek.</p>
           </div>
@@ -596,7 +594,8 @@ export default function ProjectsPage() {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
