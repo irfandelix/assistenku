@@ -133,7 +133,7 @@ export default function PublicProjectPage(props: { params: Promise<{ id: string 
                   <div className="flex bg-[#050608]/50">
                     {fileId && (
                       <a 
-                        href={`https://drive.google.com/uc?export=view&id=${fileId}`}
+                        href={`https://drive.google.com/file/d/${fileId}/view`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 py-3 text-center text-sm font-medium text-accent-blue hover:bg-accent-blue hover:text-white transition-colors border-r border-accent-blue/10 flex items-center justify-center gap-2"
@@ -142,7 +142,7 @@ export default function PublicProjectPage(props: { params: Promise<{ id: string 
                       </a>
                     )}
                     <a 
-                      href={file.url}
+                      href={fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : file.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1 py-3 text-center text-sm font-medium text-accent-blue hover:bg-accent-blue hover:text-white transition-colors flex items-center justify-center gap-2"
