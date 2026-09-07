@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, CheckCircle2, Circle, ExternalLink, MapPin, X, Save, Trash2, Copy, AlertCircle, Clock, CheckCircle, MessageCircle, UploadCloud, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDocs, where } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Link from 'next/link';
@@ -121,6 +121,35 @@ export default function ProjectsPage() {
       setIsEditing(false);
     } catch (error: any) {
       alert('Gagal menyimpan: ' + error.message);
+    }
+  };
+
+  const handleCancelPaid = async () => {
+    if (!confirm('Batalkan status lunas? Data pemasukan di Keuangan untuk proyek ini akan otomatis dihapus.')) return;
+    
+    try {
+      const qF = query(collection(db, 'finance'), where('title', '==', `Proyek: ${currentProject.title}`));
+      const snap = await getDocs(qF);
+      snap.forEach(async (d) => {
+        await deleteDoc(doc(db, 'finance', d.id));
+      });
+      
+      if (currentProject.id) {
+        await updateDoc(doc(db, 'projects', currentProject.id), {
+          isPaid: false,
+          amountPaid: '',
+          financeSynced: false
+        });
+      }
+      
+      setCurrentProject({
+        ...currentProject,
+        isPaid: false,
+        amountPaid: '',
+        financeSynced: false
+      });
+    } catch (err: any) {
+      alert('Gagal membatalkan lunas: ' + err.message);
     }
   };
 
@@ -462,32 +491,38 @@ export default function ProjectsPage() {
                     <label htmlFor="isPaid" className="text-sm font-medium text-gray-300">Tandai Lunas (Selesai)</label>
                   </div>
 
-                  {currentProject.isPaid && !currentProject.financeSynced && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-200 mt-4">
-                      <label className="block text-sm font-medium mb-1 text-neon">Nominal Pembayaran (Rp)</label>
-                      <input 
-                        type="number"
-                        value={currentProject.amountPaid}
-                        onChange={e => setCurrentProject({...currentProject, amountPaid: e.target.value})}
-                        className="w-full bg-neon/5 border border-neon/30 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-neon transition-colors"
-                        placeholder="Contoh: 1500000"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Nominal ini akan otomatis masuk ke menu Keuangan Anda.</p>
-                    </div>
-                  )}
-                  
-                  {currentProject.isPaid && currentProject.financeSynced && (
-                    <div className="p-3 mt-4 bg-gray-800/50 border border-gray-700 rounded-xl flex justify-between items-center">
-                      <div>
-                        <p className="text-sm text-gray-300 font-medium">Pembayaran Lunas: Rp {parseFloat(currentProject.amountPaid || '0').toLocaleString('id-ID')}</p>
-                        <p className="text-xs text-neon mt-1">✔️ Disinkronisasi ke Keuangan.</p>
+                  {currentProject.isPaid && (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-200 mt-4 relative">
+                      <div className="flex justify-between items-end mb-1">
+                        <label className="block text-sm font-medium text-neon">Nominal Pembayaran (Rp)</label>
+                        {currentProject.financeSynced && (
+                          <span className="text-xs text-neon font-bold flex items-center gap-1">✔️ Disinkronisasi</span>
+                        )}
                       </div>
-                      <button 
-                        onClick={() => setCurrentProject({...currentProject, isPaid: false, financeSynced: false, amountPaid: ''})}
-                        className="text-xs text-red-500 hover:text-red-400 p-2"
-                      >
-                        Batal Lunas
-                      </button>
+                      <div className="relative">
+                        <input 
+                          type="number"
+                          value={currentProject.amountPaid}
+                          onChange={e => setCurrentProject({...currentProject, amountPaid: e.target.value})}
+                          disabled={currentProject.financeSynced}
+                          className={cn(
+                            "w-full bg-neon/5 border text-gray-100 rounded-xl px-4 py-3 outline-none transition-colors",
+                            currentProject.financeSynced ? "border-gray-700/50 text-gray-400 bg-gray-800/30 cursor-not-allowed" : "border-neon/30 focus:border-neon"
+                          )}
+                          placeholder="Contoh: 1500000"
+                        />
+                        {currentProject.financeSynced && (
+                          <button 
+                            onClick={handleCancelPaid}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            Batal Lunas
+                          </button>
+                        )}
+                      </div>
+                      {!currentProject.financeSynced && (
+                        <p className="text-xs text-gray-500 mt-2">Biarkan kosong jika tidak ingin dimasukkan ke riwayat Keuangan.</p>
+                      )}
                     </div>
                   )}
                 </>
