@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Download, FileBox, ShieldCheck, Loader2, Map as MapIcon, User, Phone, FileText, Eye } from 'lucide-react';
 
-export default function PublicProjectPage({ params }: { params: { id: string } }) {
+export default function PublicProjectPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
