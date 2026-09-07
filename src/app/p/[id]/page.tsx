@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { Download, FileBox, ShieldCheck, Loader2, Map as MapIcon, User, Phone, FileText } from 'lucide-react';
+import { Download, FileBox, ShieldCheck, Loader2, Map as MapIcon, User, Phone, FileText, Eye } from 'lucide-react';
 
 export default function PublicProjectPage({ params }: { params: { id: string } }) {
   const [project, setProject] = useState<any>(null);
@@ -44,6 +44,15 @@ export default function PublicProjectPage({ params }: { params: { id: string } }
     );
   }
 
+  const extractDriveId = (url: string) => {
+    if (!url) return null;
+    const matchD = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (matchD) return matchD[1];
+    const matchId = url.match(/id=([a-zA-Z0-9_-]+)/);
+    if (matchId) return matchId[1];
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-[#0B0E14] flex flex-col items-center justify-center p-4 animate-in fade-in duration-700">
       <div className="w-full max-w-md bg-darkcard border border-gray-800 rounded-3xl p-8 relative overflow-hidden shadow-2xl">
@@ -59,7 +68,7 @@ export default function PublicProjectPage({ params }: { params: { id: string } }
         <div className="text-center relative z-10 mb-8">
           <p className="text-accent-blue font-medium text-xs tracking-widest uppercase mb-2">Penyerahan Proyek</p>
           <h1 className="text-2xl font-bold text-gray-100 mb-2">{project.title}</h1>
-          <p className="text-gray-400 text-sm">Klien: <strong className="text-gray-200">{project.client || '-'}</strong></p>
+          <p className="text-gray-400 text-sm">Tanggal Pembuatan: <strong className="text-gray-200">{project.client || '-'}</strong></p>
         </div>
 
         {/* Project Metadata Section */}
@@ -113,17 +122,34 @@ export default function PublicProjectPage({ params }: { params: { id: string } }
           {project.files && project.files.length > 0 ? (
             project.files.map((file: any, index: number) => {
               if (!file.url || file.url.trim() === '' || file.url === '#loading') return null; // Skip empty placeholders
+              const fileId = extractDriveId(file.url);
+              
               return (
-                <a 
-                  key={index}
-                  href={file.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full bg-accent-blue text-white py-4 px-6 rounded-xl font-bold hover:bg-blue-600 transition-transform active:scale-95 flex items-center justify-between shadow-[0_0_20px_rgba(37,99,235,0.2)]"
-                >
-                  <span className="truncate pr-4">{file.title}</span>
-                  <Download className="w-5 h-5 shrink-0" />
-                </a>
+                <div key={index} className="w-full bg-accent-blue/10 border border-accent-blue/20 rounded-xl overflow-hidden flex flex-col mb-3">
+                  <div className="px-5 py-4 border-b border-accent-blue/10 flex items-center justify-between">
+                    <span className="font-medium text-gray-200 truncate pr-4">{file.title}</span>
+                  </div>
+                  <div className="flex bg-[#050608]/50">
+                    {fileId && (
+                      <a 
+                        href={`/api/stream-file?id=${fileId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-3 text-center text-sm font-medium text-accent-blue hover:bg-accent-blue hover:text-white transition-colors border-r border-accent-blue/10 flex items-center justify-center gap-2"
+                      >
+                        <Eye className="w-4 h-4" /> Lihat
+                      </a>
+                    )}
+                    <a 
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-3 text-center text-sm font-medium text-accent-blue hover:bg-accent-blue hover:text-white transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-4 h-4" /> Unduh
+                    </a>
+                  </div>
+                </div>
               );
             })
           ) : project.link ? (

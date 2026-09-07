@@ -292,13 +292,13 @@ export default function ProjectsPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-400">Klien / Instansi</label>
+                  <label className="block text-sm font-medium mb-1 text-gray-400">Tanggal Pembuatan</label>
                   <input 
                     type="text"
                     value={currentProject.client}
                     onChange={e => setCurrentProject({...currentProject, client: e.target.value})}
                     className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
-                    placeholder="Misal: PT. Maju Jaya"
+                    placeholder="Misal: 12 Agustus 2024"
                   />
                 </div>
 
@@ -499,7 +499,7 @@ export default function ProjectsPage() {
                   <span className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-300 mr-2 border border-gray-700">
                     {project.client ? project.client.charAt(0).toUpperCase() : '?'}
                   </span>
-                  {project.client || 'Tanpa Klien'}
+                  {project.client || 'Tanpa Tanggal'}
                 </div>
               </div>
               
