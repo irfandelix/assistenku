@@ -22,7 +22,8 @@ export default function PublicProjectPage(props: { params: Promise<{ id: string 
       await updateDoc(docRef, {
         feedback: arrayUnion({
           text: feedbackText.trim(),
-          createdAt: Date.now()
+          createdAt: Date.now(),
+          isResolved: false
         })
       });
       setFeedbackSent(true);

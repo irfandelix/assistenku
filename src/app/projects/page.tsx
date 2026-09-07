@@ -356,24 +356,31 @@ export default function ProjectsPage() {
                   </h3>
                   <div className="space-y-3">
                     {currentProject.feedback.map((fb: any, i: number) => (
-                      <div key={i} className="bg-[#050608] border border-gray-800 rounded-xl p-4 flex justify-between items-start">
+                      <div key={i} className={cn(
+                        "border rounded-xl p-4 flex justify-between items-start transition-all",
+                        fb.isResolved ? "bg-gray-900/50 border-gray-800/50 opacity-60" : "bg-[#050608] border-gray-800"
+                      )}>
                         <div>
-                          <p className="text-sm text-gray-200">{fb.text}</p>
+                          <p className={cn("text-sm transition-all", fb.isResolved ? "text-gray-500 line-through" : "text-gray-200")}>{fb.text}</p>
                           <p className="text-xs text-gray-500 mt-2">{new Date(fb.createdAt).toLocaleString('id-ID')}</p>
                         </div>
                         <button 
                           onClick={async () => {
-                            if (confirm('Hapus catatan ini?')) {
-                              const newFeedback = currentProject.feedback.filter((_: any, index: number) => index !== i);
-                              setCurrentProject({...currentProject, feedback: newFeedback});
-                              if (currentProject.id) {
-                                await updateDoc(doc(db, 'projects', currentProject.id), { feedback: newFeedback });
-                              }
+                            const newFeedback = [...currentProject.feedback];
+                            newFeedback[i].isResolved = !newFeedback[i].isResolved;
+                            setCurrentProject({...currentProject, feedback: newFeedback});
+                            if (currentProject.id) {
+                              await updateDoc(doc(db, 'projects', currentProject.id), { feedback: newFeedback });
                             }
                           }}
-                          className="text-gray-500 hover:text-red-500 transition-colors p-2"
+                          className={cn(
+                            "transition-colors p-2 rounded-lg flex items-center gap-1 text-xs font-bold",
+                            fb.isResolved 
+                              ? "bg-gray-800 text-gray-400 hover:text-white" 
+                              : "bg-green-500/10 text-green-500 hover:bg-green-500/20"
+                          )}
                         >
-                          <X className="w-4 h-4" />
+                          <CheckCircle2 className="w-4 h-4" /> {fb.isResolved ? 'Batal' : 'Selesai'}
                         </button>
                       </div>
                     ))}
@@ -637,7 +644,7 @@ export default function ProjectsPage() {
                       {project.documentType}
                     </span>
                   )}
-                  {project.feedback && project.feedback.length > 0 && (
+                  {project.feedback && project.feedback.some((f: any) => !f.isResolved) && (
                     <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-red-500/10 text-red-500 uppercase tracking-wider flex items-center gap-1 animate-pulse">
                       <MessageCircle className="w-3 h-3" /> Ada Revisi!
                     </span>
