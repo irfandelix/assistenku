@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { Download, FileBox, ShieldCheck, Loader2, Map as MapIcon, User, Phone, FileText, Eye } from 'lucide-react';
+import { Download, FileBox, ShieldCheck, Loader2, Map as MapIcon, User, Phone, FileText, Eye, Calendar } from 'lucide-react';
 
 export default function PublicProjectPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
@@ -68,13 +68,21 @@ export default function PublicProjectPage(props: { params: Promise<{ id: string 
 
         <div className="text-center relative z-10 mb-8">
           <p className="text-accent-blue font-medium text-xs tracking-widest uppercase mb-2">Penyerahan Proyek</p>
-          <h1 className="text-2xl font-bold text-gray-100 mb-2">{project.title}</h1>
-          <p className="text-gray-400 text-sm">Tanggal Pembuatan: <strong className="text-gray-200">{project.client || '-'}</strong></p>
+          <h1 className="text-2xl font-bold text-gray-100">{project.title}</h1>
         </div>
 
         {/* Project Metadata Section */}
-        {(project.documentType || project.pemrakarsa || project.consultantName) && (
+        {(project.client || project.documentType || project.pemrakarsa || project.consultantName) && (
           <div className="bg-[#050608] border border-gray-800 rounded-2xl p-4 mb-6 relative z-10 space-y-3">
+            {project.client && (
+              <div className="flex items-center gap-3">
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Tanggal Pembuatan</p>
+                  <p className="text-sm text-gray-200 font-medium">{project.client}</p>
+                </div>
+              </div>
+            )}
             {project.documentType && (
               <div className="flex items-center gap-3">
                 <FileText className="w-4 h-4 text-gray-500" />
