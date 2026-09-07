@@ -140,13 +140,13 @@ export default function ProjectsPage() {
   };
 
   const handleShareWa = (project: any) => {
-    const publicUrl = `https://projectirfan.vercel.app/p/${project.id}`;
+    const publicUrl = `https://proyekirfan.vercel.app/p/${project.id}`;
     const text = `Halo! Ini file untuk proyek *${project.title}*. Silakan diunduh/dilihat melalui link berikut ya:\n\n${publicUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const handleCopyLink = (project: any) => {
-    const publicUrl = `https://projectirfan.vercel.app/p/${project.id}`;
+    const publicUrl = `https://proyekirfan.vercel.app/p/${project.id}`;
     navigator.clipboard.writeText(publicUrl);
     alert('Link portal proyek berhasil disalin ke clipboard!');
   };
