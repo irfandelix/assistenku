@@ -206,10 +206,14 @@ export default function ProjectsPage() {
   const uploadFileForSlot = async (file: File, index: number) => {
     try {
       const formData = new FormData();
-      formData.append('file', file);
       
-      const fileTitle = currentProject.files[index].title.replace(/[^a-zA-Z0-9]/g, '_');
-      formData.append('foodName', `Project_${currentProject.title}_${fileTitle}`);
+      const fileTitle = currentProject.files[index].title.replace(/[^a-zA-Z0-9 ]/g, '_');
+      // Ganti nama file dengan nama slot agar rapi di dalam folder Google Drive
+      const renamedFile = new File([file], `${fileTitle}_${file.name}`, { type: file.type });
+      
+      formData.append('file', renamedFile);
+      // Semua file proyek ini akan masuk ke 1 folder dengan nama proyek
+      formData.append('foodName', `Project_${currentProject.title.replace(/[^a-zA-Z0-9 ]/g, '_')}`);
       
       const loadingFiles = [...currentProject.files];
       loadingFiles[index].url = '#loading'; // Temporary marker
