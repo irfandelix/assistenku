@@ -2,14 +2,38 @@
 
 import { useEffect, useState, use } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { Download, FileBox, ShieldCheck, Loader2, Map as MapIcon, User, Phone, FileText, Eye, Calendar } from 'lucide-react';
+import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { Download, FileBox, ShieldCheck, Loader2, Map as MapIcon, User, Phone, FileText, Eye, Calendar, Send, MessageCircle, CheckCircle2 } from 'lucide-react';
 
 export default function PublicProjectPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [previewFileId, setPreviewFileId] = useState<string | null>(null);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
+
+  const handleSendFeedback = async () => {
+    if (!feedbackText.trim() || !project) return;
+    setIsSubmittingFeedback(true);
+    try {
+      const docRef = doc(db, 'projects', project.id);
+      await updateDoc(docRef, {
+        feedback: arrayUnion({
+          text: feedbackText.trim(),
+          createdAt: Date.now()
+        })
+      });
+      setFeedbackSent(true);
+      setFeedbackText('');
+    } catch (error) {
+      console.error("Error sending feedback:", error);
+      alert('Gagal mengirim pesan');
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -182,6 +206,40 @@ export default function PublicProjectPage(props: { params: Promise<{ id: string 
               <Download className="w-5 h-5 shrink-0" />
             </a>
           ) : null}
+        </div>
+
+        <div className="mt-8 relative z-10 border-t border-gray-800 pt-6">
+          <div className="bg-[#050608] border border-gray-800 rounded-2xl p-5">
+            <h3 className="text-sm font-bold text-gray-200 mb-2 flex items-center gap-2">
+              <MessageCircle className="w-4 h-4 text-accent-blue" />
+              Tinggalkan Pesan / Revisi
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">Ada bagian yang perlu diperbaiki? Tuliskan catatan Anda di bawah ini, kami akan segera meresponsnya.</p>
+            
+            {feedbackSent ? (
+              <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-center">
+                <CheckCircle2 className="w-6 h-6 text-green-500 mx-auto mb-2" />
+                <p className="text-sm text-green-500 font-medium">Pesan berhasil dikirim!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <textarea 
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  placeholder="Misal: Mas, tolong batas tanah utaranya diperjelas..."
+                  className="w-full bg-[#0B0E14] border border-gray-800 text-gray-200 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors text-sm resize-none h-24"
+                ></textarea>
+                <button 
+                  onClick={handleSendFeedback}
+                  disabled={!feedbackText.trim() || isSubmittingFeedback}
+                  className="w-full bg-accent-blue text-white py-3 px-4 rounded-xl text-sm font-bold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmittingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Kirim Pesan
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="mt-8 text-center relative z-10">

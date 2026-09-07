@@ -25,7 +25,8 @@ const DEFAULT_PROJECT = {
   isPaid: false, 
   amountPaid: '', 
   financeSynced: false,
-  paidAt: ''
+  paidAt: '',
+  feedback: [] as any[]
 };
 
 const parseIndonesianDate = (dateStr: string) => {
@@ -115,7 +116,8 @@ export default function ProjectsPage() {
         isPaid: currentProject.isPaid,
         amountPaid: currentProject.amountPaid,
         financeSynced: isNowSynced,
-        paidAt: currentProject.paidAt
+        paidAt: currentProject.paidAt,
+        feedback: currentProject.feedback || []
       };
 
       if (currentProject.id) {
@@ -220,6 +222,7 @@ export default function ProjectsPage() {
       amountPaid: project.amountPaid || '',
       financeSynced: project.financeSynced || false,
       paidAt: project.paidAt || '',
+      feedback: project.feedback || [],
       documentType: project.documentType || '',
       pemrakarsa: project.pemrakarsa || '',
       consultantName: project.consultantName || '',
@@ -346,6 +349,38 @@ export default function ProjectsPage() {
             </div>
             
             <div className="bg-darkcard border border-gray-800 rounded-3xl p-6 md:p-10 shadow-2xl mb-20">
+              {currentProject.feedback && currentProject.feedback.length > 0 && (
+                <div className="mb-8 bg-red-500/5 border border-red-500/20 rounded-2xl p-5">
+                  <h3 className="text-red-500 font-bold mb-3 flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5" /> Catatan Revisi dari Klien
+                  </h3>
+                  <div className="space-y-3">
+                    {currentProject.feedback.map((fb: any, i: number) => (
+                      <div key={i} className="bg-[#050608] border border-gray-800 rounded-xl p-4 flex justify-between items-start">
+                        <div>
+                          <p className="text-sm text-gray-200">{fb.text}</p>
+                          <p className="text-xs text-gray-500 mt-2">{new Date(fb.createdAt).toLocaleString('id-ID')}</p>
+                        </div>
+                        <button 
+                          onClick={async () => {
+                            if (confirm('Hapus catatan ini?')) {
+                              const newFeedback = currentProject.feedback.filter((_: any, index: number) => index !== i);
+                              setCurrentProject({...currentProject, feedback: newFeedback});
+                              if (currentProject.id) {
+                                await updateDoc(doc(db, 'projects', currentProject.id), { feedback: newFeedback });
+                              }
+                            }
+                          }}
+                          className="text-gray-500 hover:text-red-500 transition-colors p-2"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -600,6 +635,11 @@ export default function ProjectsPage() {
                   {project.documentType && (
                     <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-gray-800 text-gray-300 uppercase tracking-wider border border-gray-700">
                       {project.documentType}
+                    </span>
+                  )}
+                  {project.feedback && project.feedback.length > 0 && (
+                    <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-red-500/10 text-red-500 uppercase tracking-wider flex items-center gap-1 animate-pulse">
+                      <MessageCircle className="w-3 h-3" /> Ada Revisi!
                     </span>
                   )}
                 </div>
