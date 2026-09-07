@@ -27,6 +27,30 @@ const DEFAULT_PROJECT = {
   financeSynced: false 
 };
 
+const parseIndonesianDate = (dateStr: string) => {
+  if (!dateStr) return 0;
+  const months: Record<string, number> = {
+    'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mei': 4, 'jun': 5,
+    'jul': 6, 'agu': 7, 'sep': 8, 'okt': 9, 'nov': 10, 'des': 11
+  };
+  const parts = dateStr.toLowerCase().trim().split(/\s+/);
+  if (parts.length >= 3) {
+    const day = parseInt(parts[0], 10);
+    let month = 0;
+    for (const [mName, mNum] of Object.entries(months)) {
+      if (parts[1].startsWith(mName)) {
+        month = mNum;
+        break;
+      }
+    }
+    const year = parseInt(parts[2], 10);
+    if (!isNaN(day) && !isNaN(year)) {
+      return new Date(year, month, day).getTime();
+    }
+  }
+  return 0;
+};
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -40,7 +64,14 @@ export default function ProjectsPage() {
   useEffect(() => {
     const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      data.sort((a, b) => {
+        const timeA = parseIndonesianDate(a.client) || (a.createdAt?.toMillis ? a.createdAt.toMillis() : 0);
+        const timeB = parseIndonesianDate(b.client) || (b.createdAt?.toMillis ? b.createdAt.toMillis() : 0);
+        return timeB - timeA; // Descending (newest to oldest)
+      });
+      
       setProjects(data);
     });
     return () => unsubscribe();
