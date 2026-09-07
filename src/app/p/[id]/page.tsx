@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { Download, FileBox, ShieldCheck, Loader2 } from 'lucide-react';
+import { Download, FileBox, ShieldCheck, Loader2, Map as MapIcon, User, Phone, FileText } from 'lucide-react';
 
 export default function PublicProjectPage({ params }: { params: { id: string } }) {
   const [project, setProject] = useState<any>(null);
@@ -59,32 +59,73 @@ export default function PublicProjectPage({ params }: { params: { id: string } }
         <div className="text-center relative z-10 mb-8">
           <p className="text-accent-blue font-medium text-xs tracking-widest uppercase mb-2">Penyerahan Proyek</p>
           <h1 className="text-2xl font-bold text-gray-100 mb-2">{project.title}</h1>
-          <p className="text-gray-400 text-sm">Disiapkan khusus untuk <strong className="text-gray-200">{project.client}</strong></p>
+          <p className="text-gray-400 text-sm">Klien: <strong className="text-gray-200">{project.client || '-'}</strong></p>
         </div>
+
+        {/* Project Metadata Section */}
+        {(project.documentType || project.pemrakarsa || project.consultantName) && (
+          <div className="bg-[#050608] border border-gray-800 rounded-2xl p-4 mb-6 relative z-10 space-y-3">
+            {project.documentType && (
+              <div className="flex items-center gap-3">
+                <FileText className="w-4 h-4 text-gray-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Jenis Dokumen</p>
+                  <p className="text-sm text-gray-200 font-medium">{project.documentType}</p>
+                </div>
+              </div>
+            )}
+            {project.pemrakarsa && (
+              <div className="flex items-center gap-3">
+                <User className="w-4 h-4 text-gray-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Pemrakarsa</p>
+                  <p className="text-sm text-gray-200 font-medium">{project.pemrakarsa}</p>
+                </div>
+              </div>
+            )}
+            {(project.consultantName || project.consultantNumber) && (
+              <div className="flex items-start gap-3">
+                <MapIcon className="w-4 h-4 text-gray-500 mt-1" />
+                <div>
+                  <p className="text-xs text-gray-500">Konsultan</p>
+                  <p className="text-sm text-gray-200 font-medium">{project.consultantName || '-'}</p>
+                  {project.consultantNumber && (
+                    <p className="text-xs text-accent-blue mt-0.5 flex items-center gap-1">
+                      <Phone className="w-3 h-3" /> {project.consultantNumber}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="bg-[#050608] border border-gray-800 rounded-2xl p-5 mb-8 relative z-10">
           <div className="flex items-start gap-3">
             <ShieldCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
             <p className="text-sm text-gray-400 leading-relaxed">
-              File proyek Anda telah siap dan tersimpan dengan aman. Silakan klik tombol di bawah untuk mengunduh atau meninjau file melalui Google Drive.
+              File dan dokumen proyek Anda telah siap. Silakan klik tombol di bawah untuk mengunduhnya.
             </p>
           </div>
         </div>
 
         <div className="space-y-3 relative z-10">
           {project.files && project.files.length > 0 ? (
-            project.files.map((file: any, index: number) => (
-              <a 
-                key={index}
-                href={file.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-accent-blue text-white py-4 px-6 rounded-xl font-bold hover:bg-blue-600 transition-transform active:scale-95 flex items-center justify-between shadow-[0_0_20px_rgba(37,99,235,0.2)]"
-              >
-                <span className="truncate pr-4">{file.title}</span>
-                <Download className="w-5 h-5 shrink-0" />
-              </a>
-            ))
+            project.files.map((file: any, index: number) => {
+              if (!file.url || file.url.trim() === '' || file.url === '#loading') return null; // Skip empty placeholders
+              return (
+                <a 
+                  key={index}
+                  href={file.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-accent-blue text-white py-4 px-6 rounded-xl font-bold hover:bg-blue-600 transition-transform active:scale-95 flex items-center justify-between shadow-[0_0_20px_rgba(37,99,235,0.2)]"
+                >
+                  <span className="truncate pr-4">{file.title}</span>
+                  <Download className="w-5 h-5 shrink-0" />
+                </a>
+              );
+            })
           ) : project.link ? (
             <a 
               href={project.link}

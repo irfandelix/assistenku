@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, CheckCircle2, Circle, ExternalLink, MapPin, X, Save, Trash2, Copy, AlertCircle, Clock, CheckCircle, MessageCircle } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, ExternalLink, MapPin, X, Save, Trash2, Copy, AlertCircle, Clock, CheckCircle, MessageCircle, UploadCloud } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { clsx } from 'clsx';
@@ -12,13 +12,29 @@ function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
+const DEFAULT_PROJECT = { 
+  id: '', 
+  title: '', 
+  client: '', 
+  documentType: '', 
+  pemrakarsa: '', 
+  consultantName: '', 
+  consultantNumber: '',
+  link: '', 
+  files: [] as {title: string, url: string}[], 
+  isPaid: false, 
+  amountPaid: '', 
+  financeSynced: false 
+};
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentProject, setCurrentProject] = useState({ id: '', title: '', client: '', link: '', files: [] as {title: string, url: string}[], isPaid: false, amountPaid: '', financeSynced: false });
+  const [currentProject, setCurrentProject] = useState(DEFAULT_PROJECT);
 
   const hasFiles = (project: any) => {
-    return (project.files && project.files.length > 0) || (project.link && project.link.trim() !== '');
+    const hasValidFiles = project.files && project.files.some((f: any) => f.url && f.url.trim() !== '' && f.url !== '#loading');
+    return hasValidFiles || (project.link && project.link.trim() !== '');
   };
 
   useEffect(() => {
@@ -49,25 +65,25 @@ export default function ProjectsPage() {
         }
       }
 
+      const payload = {
+        title: currentProject.title,
+        client: currentProject.client,
+        documentType: currentProject.documentType,
+        pemrakarsa: currentProject.pemrakarsa,
+        consultantName: currentProject.consultantName,
+        consultantNumber: currentProject.consultantNumber,
+        link: currentProject.files && currentProject.files.length > 0 ? currentProject.files[0].url : '',
+        files: currentProject.files || [],
+        isPaid: currentProject.isPaid,
+        amountPaid: currentProject.amountPaid,
+        financeSynced: isNowSynced
+      };
+
       if (currentProject.id) {
-        await updateDoc(doc(db, 'projects', currentProject.id), {
-          title: currentProject.title,
-          client: currentProject.client,
-          link: currentProject.files && currentProject.files.length > 0 ? currentProject.files[0].url : '',
-          files: currentProject.files || [],
-          isPaid: currentProject.isPaid,
-          amountPaid: currentProject.amountPaid,
-          financeSynced: isNowSynced
-        });
+        await updateDoc(doc(db, 'projects', currentProject.id), payload);
       } else {
         await addDoc(collection(db, 'projects'), {
-          title: currentProject.title,
-          client: currentProject.client,
-          link: currentProject.files && currentProject.files.length > 0 ? currentProject.files[0].url : '',
-          files: currentProject.files || [],
-          isPaid: currentProject.isPaid,
-          amountPaid: currentProject.amountPaid,
-          financeSynced: isNowSynced,
+          ...payload,
           createdAt: serverTimestamp()
         });
       }
@@ -125,7 +141,7 @@ export default function ProjectsPage() {
     }
   };
 
-  const openEditor = (project: any = { id: '', title: '', client: '', link: '', files: [], isPaid: false, amountPaid: '', financeSynced: false }) => {
+  const openEditor = (project: any = DEFAULT_PROJECT) => {
     let initialFiles = project.files || [];
     if (initialFiles.length === 0 && project.link && project.link.trim() !== '') {
       initialFiles = [{ title: 'File Proyek Utama', url: project.link }];
@@ -134,9 +150,45 @@ export default function ProjectsPage() {
       ...project,
       files: initialFiles,
       amountPaid: project.amountPaid || '',
-      financeSynced: project.financeSynced || false
+      financeSynced: project.financeSynced || false,
+      documentType: project.documentType || '',
+      pemrakarsa: project.pemrakarsa || '',
+      consultantName: project.consultantName || '',
+      consultantNumber: project.consultantNumber || ''
     });
     setIsEditing(true);
+  };
+
+  const handleDocumentTypeChange = (type: string) => {
+    let newFiles = [...currentProject.files];
+    
+    // Only auto-populate if currently empty, or user agrees to reset
+    if (newFiles.length === 0 || confirm("Apakah Anda ingin mengatur ulang daftar pustaka file sesuai dengan format dokumen ini?")) {
+      if (type === 'SPPL') {
+        newFiles = [
+          { title: 'Peta Tapak Proyek (PDF)', url: '' },
+          { title: 'Peta Pemantauan (PDF)', url: '' },
+          { title: 'Peta Pengelolaan (PDF)', url: '' }
+        ];
+      } else if (type === 'UKL UPL') {
+        newFiles = [
+          { title: 'Peta Tapak Proyek (ZIP)', url: '' },
+          { title: 'Peta Tapak Proyek (PDF)', url: '' },
+          { title: 'Peta Pemantauan (ZIP)', url: '' },
+          { title: 'Peta Pemantauan (PDF)', url: '' },
+          { title: 'Peta Pengelolaan (ZIP)', url: '' },
+          { title: 'Peta Pengelolaan (PDF)', url: '' },
+          { title: 'Peta Kawasan Hutan (PDF)', url: '' },
+          { title: 'Peta PIPPIB (PDF)', url: '' }
+        ];
+      }
+    }
+
+    setCurrentProject({
+      ...currentProject,
+      documentType: type,
+      files: newFiles
+    });
   };
 
   const handleShareWa = (project: any) => {
@@ -149,6 +201,42 @@ export default function ProjectsPage() {
     const publicUrl = `https://proyekirfan.vercel.app/p/${project.id}`;
     navigator.clipboard.writeText(publicUrl);
     alert('Link portal proyek berhasil disalin ke clipboard!');
+  };
+
+  const uploadFileForSlot = async (file: File, index: number) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const fileTitle = currentProject.files[index].title.replace(/[^a-zA-Z0-9]/g, '_');
+      formData.append('foodName', `Project_${currentProject.title}_${fileTitle}`);
+      
+      const loadingFiles = [...currentProject.files];
+      loadingFiles[index].url = '#loading'; // Temporary marker
+      setCurrentProject({...currentProject, files: loadingFiles});
+      
+      const res = await fetch('/api/drive-upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        const newFiles = [...currentProject.files];
+        newFiles[index].url = data.webViewLink || data.url;
+        setCurrentProject({...currentProject, files: newFiles});
+      } else {
+        alert(data.error);
+        const resetFiles = [...currentProject.files];
+        resetFiles[index].url = '';
+        setCurrentProject({...currentProject, files: resetFiles});
+      }
+    } catch (err: any) {
+      alert('Gagal mengunggah: ' + err.message);
+      const resetFiles = [...currentProject.files];
+      resetFiles[index].url = '';
+      setCurrentProject({...currentProject, files: resetFiles});
+    }
   };
 
   return (
@@ -168,8 +256,8 @@ export default function ProjectsPage() {
 
       {/* Editor Modal */}
       {isEditing && (
-        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-darkcard border border-gray-800 w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-darkcard border border-gray-800 w-full max-w-xl rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 my-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-100">{currentProject.id ? 'Edit Proyek' : 'Proyek Baru'}</h2>
               <button onClick={() => setIsEditing(false)} className="p-2 text-gray-500 hover:bg-gray-800 rounded-full">
@@ -178,29 +266,82 @@ export default function ProjectsPage() {
             </div>
             
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1 text-gray-400">Nama Proyek</label>
-                <input 
-                  type="text"
-                  value={currentProject.title}
-                  onChange={e => setCurrentProject({...currentProject, title: e.target.value})}
-                  className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
-                  placeholder="Misal: Redesign Website"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-gray-400">Klien / Instansi</label>
-                <input 
-                  type="text"
-                  value={currentProject.client}
-                  onChange={e => setCurrentProject({...currentProject, client: e.target.value})}
-                  className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
-                  placeholder="Misal: PT. Maju Jaya"
-                />
-              </div>
-              {currentProject.id && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-1 text-gray-400">Nama Proyek</label>
+                  <input 
+                    type="text"
+                    value={currentProject.title}
+                    onChange={e => setCurrentProject({...currentProject, title: e.target.value})}
+                    className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
+                    placeholder="Misal: Redesign Website"
+                  />
+                </div>
+                
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-400">Pustaka Proyek (Daftar File)</label>
+                  <label className="block text-sm font-medium mb-1 text-gray-400">Jenis Dokumen</label>
+                  <select
+                    value={currentProject.documentType}
+                    onChange={e => handleDocumentTypeChange(e.target.value)}
+                    className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors appearance-none"
+                  >
+                    <option value="">Pilih Jenis Dokumen...</option>
+                    <option value="SPPL">SPPL</option>
+                    <option value="UKL UPL">UKL UPL</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-400">Klien / Instansi</label>
+                  <input 
+                    type="text"
+                    value={currentProject.client}
+                    onChange={e => setCurrentProject({...currentProject, client: e.target.value})}
+                    className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
+                    placeholder="Misal: PT. Maju Jaya"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-400">Nama Pemrakarsa</label>
+                  <input 
+                    type="text"
+                    value={currentProject.pemrakarsa}
+                    onChange={e => setCurrentProject({...currentProject, pemrakarsa: e.target.value})}
+                    className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
+                    placeholder="Nama Pemrakarsa"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-400">Nama Konsultan</label>
+                  <input 
+                    type="text"
+                    value={currentProject.consultantName}
+                    onChange={e => setCurrentProject({...currentProject, consultantName: e.target.value})}
+                    className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
+                    placeholder="Nama Konsultan"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-1 text-gray-400">Nomor Konsultan</label>
+                  <input 
+                    type="text"
+                    value={currentProject.consultantNumber}
+                    onChange={e => setCurrentProject({...currentProject, consultantNumber: e.target.value})}
+                    className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
+                    placeholder="Misal: 08123456789"
+                  />
+                </div>
+              </div>
+
+              {currentProject.id && (
+                <div className="pt-4 border-t border-gray-800">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-gray-400">Peta yang dibutuhkan / Pustaka File</label>
+                  </div>
+                  
                   <div className="space-y-3 mb-3">
                     {currentProject.files && currentProject.files.map((file: any, index: number) => (
                       <div key={index} className="flex items-center gap-2 bg-[#050608] p-3 rounded-xl border border-gray-800">
@@ -215,9 +356,28 @@ export default function ProjectsPage() {
                           className="flex-1 bg-transparent border-none outline-none text-sm text-gray-100 placeholder-gray-600"
                           placeholder="Nama file (misal: Peta Tapak)"
                         />
-                        <a href={file.url} target="_blank" rel="noreferrer" className="p-2 text-accent-blue hover:bg-accent-blue/10 rounded-lg transition-colors">
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
+                        
+                        {file.url === '#loading' ? (
+                          <div className="p-2 text-accent-blue"><Loader2 className="w-4 h-4 animate-spin" /></div>
+                        ) : file.url ? (
+                          <a href={file.url} target="_blank" rel="noreferrer" className="p-2 text-green-500 hover:bg-green-500/10 rounded-lg transition-colors" title="Lihat File">
+                            <CheckCircle2 className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <div className="relative overflow-hidden p-2 text-accent-blue bg-accent-blue/10 rounded-lg hover:bg-accent-blue/20 cursor-pointer" title="Upload File">
+                            <input 
+                              type="file"
+                              accept=".zip,.rar,.pdf,.doc,.docx,.ppt,.pptx"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) uploadFileForSlot(f, index);
+                              }}
+                            />
+                            <UploadCloud className="w-4 h-4" />
+                          </div>
+                        )}
+                        
                         <button 
                           onClick={() => {
                             const newFiles = currentProject.files.filter((_, i) => i !== index);
@@ -231,53 +391,20 @@ export default function ProjectsPage() {
                     ))}
                   </div>
                   
-                  <div className="relative border-2 border-dashed border-gray-800 rounded-xl p-4 hover:border-accent-blue transition-colors cursor-pointer bg-[#050608] flex items-center justify-center">
-                    <input 
-                      type="file" 
-                      accept=".zip,.rar,.pdf,.doc,.docx,.ppt,.pptx"
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        
-                        try {
-                          const formData = new FormData();
-                          formData.append('file', file);
-                          formData.append('foodName', `Project_${currentProject.title || 'Draft'}`);
-                          
-                          const loadingFiles = [...currentProject.files, { title: 'Mengunggah...', url: '#' }];
-                          setCurrentProject({...currentProject, files: loadingFiles});
-                          
-                          const res = await fetch('/api/drive-upload', {
-                            method: 'POST',
-                            body: formData
-                          });
-                          
-                          const data = await res.json();
-                          if (data.success) {
-                            const newFiles = [...currentProject.files];
-                            newFiles.push({
-                              title: file.name.split('.')[0] || 'File Baru',
-                              url: data.webViewLink || data.url
-                            });
-                            setCurrentProject({...currentProject, files: newFiles});
-                          } else {
-                            alert(data.error);
-                            setCurrentProject({...currentProject, files: currentProject.files});
-                          }
-                        } catch (err: any) {
-                          alert('Gagal mengunggah: ' + err.message);
-                          setCurrentProject({...currentProject, files: currentProject.files});
-                        }
-                      }}
-                    />
-                    <div className="flex flex-col items-center gap-1 text-gray-400 pointer-events-none text-center">
-                      <Plus className="w-5 h-5 text-accent-blue" />
-                      <span className="text-xs font-medium">Tambah File Proyek (ZIP/PDF/Doc)</span>
-                    </div>
-                  </div>
+                  <button 
+                    onClick={() => {
+                      setCurrentProject({
+                        ...currentProject, 
+                        files: [...currentProject.files, { title: '', url: '' }]
+                      });
+                    }}
+                    className="w-full py-3 border-2 border-dashed border-gray-800 rounded-xl text-gray-400 text-sm font-medium hover:text-accent-blue hover:border-accent-blue transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" /> Tambah Slot File Ekstra
+                  </button>
                 </div>
               )}
+
               {currentProject.id && (
                   <>
                     <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-800">
@@ -315,7 +442,7 @@ export default function ProjectsPage() {
               )}
             </div>
             
-            <div className="mt-8 flex justify-between items-center">
+            <div className="mt-8 flex justify-between items-center pt-4 border-t border-gray-800">
               {currentProject.id ? (
                 <button onClick={() => handleDelete(currentProject.id)} className="text-red-500 font-medium hover:text-red-400 flex items-center gap-1 p-2">
                   <Trash2 className="w-4 h-4" /> Hapus
@@ -361,13 +488,18 @@ export default function ProjectsPage() {
                       <Clock className="w-3 h-3" /> Pending
                     </span>
                   )}
+                  {project.documentType && (
+                    <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-gray-800 text-gray-300 uppercase tracking-wider border border-gray-700">
+                      {project.documentType}
+                    </span>
+                  )}
                 </div>
                 <h3 className="font-bold text-xl text-gray-100 group-hover:text-accent-blue transition-colors">{project.title}</h3>
                 <div className="flex items-center text-sm text-gray-400 mt-1">
                   <span className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-300 mr-2 border border-gray-700">
-                    {project.client.charAt(0).toUpperCase()}
+                    {project.client ? project.client.charAt(0).toUpperCase() : '?'}
                   </span>
-                  {project.client}
+                  {project.client || 'Tanpa Klien'}
                 </div>
               </div>
               
