@@ -66,7 +66,7 @@ export default function ProjectsPage() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      data.sort((a, b) => {
+      data.sort((a: any, b: any) => {
         const timeA = parseIndonesianDate(a.client) || (a.createdAt?.toMillis ? a.createdAt.toMillis() : 0);
         const timeB = parseIndonesianDate(b.client) || (b.createdAt?.toMillis ? b.createdAt.toMillis() : 0);
         return timeB - timeA; // Descending (newest to oldest)
