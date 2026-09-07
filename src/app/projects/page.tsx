@@ -402,22 +402,25 @@ export default function ProjectsPage() {
                         
                         {file.url === '#loading' ? (
                           <div className="p-2 text-accent-blue"><Loader2 className="w-4 h-4 animate-spin" /></div>
-                        ) : file.url ? (
-                          <a href={file.url} target="_blank" rel="noreferrer" className="p-2 text-green-500 hover:bg-green-500/10 rounded-lg transition-colors" title="Lihat File">
-                            <CheckCircle2 className="w-4 h-4" />
-                          </a>
                         ) : (
-                          <div className="relative overflow-hidden p-2 text-accent-blue bg-accent-blue/10 rounded-lg hover:bg-accent-blue/20 cursor-pointer" title="Upload File">
-                            <input 
-                              type="file"
-                              accept=".zip,.rar,.pdf,.doc,.docx,.ppt,.pptx"
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (f) uploadFileForSlot(f, index);
-                              }}
-                            />
-                            <UploadCloud className="w-4 h-4" />
+                          <div className="flex items-center gap-1">
+                            {file.url && (
+                              <a href={file.url} target="_blank" rel="noreferrer" className="p-2 text-green-500 hover:bg-green-500/10 rounded-lg transition-colors" title="Lihat File yang Saat Ini Aktif">
+                                <CheckCircle2 className="w-4 h-4" />
+                              </a>
+                            )}
+                            <div className="relative overflow-hidden p-2 text-accent-blue bg-accent-blue/10 rounded-lg hover:bg-accent-blue/20 cursor-pointer" title={file.url ? "Upload Revisi / Timpa File" : "Upload File"}>
+                              <input 
+                                type="file"
+                                accept=".zip,.rar,.pdf,.doc,.docx,.ppt,.pptx"
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) uploadFileForSlot(f, index);
+                                }}
+                              />
+                              <UploadCloud className="w-4 h-4" />
+                            </div>
                           </div>
                         )}
                         
