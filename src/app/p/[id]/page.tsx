@@ -132,7 +132,7 @@ export default function PublicProjectPage({ params }: { params: { id: string } }
                   <div className="flex bg-[#050608]/50">
                     {fileId && (
                       <a 
-                        href={`/api/stream-file?id=${fileId}`}
+                        href={`https://drive.google.com/uc?export=view&id=${fileId}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 py-3 text-center text-sm font-medium text-accent-blue hover:bg-accent-blue hover:text-white transition-colors border-r border-accent-blue/10 flex items-center justify-center gap-2"
