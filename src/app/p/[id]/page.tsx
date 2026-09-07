@@ -9,6 +9,7 @@ export default function PublicProjectPage(props: { params: Promise<{ id: string 
   const params = use(props.params);
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [previewFileId, setPreviewFileId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -140,14 +141,12 @@ export default function PublicProjectPage(props: { params: Promise<{ id: string 
                   </div>
                   <div className="flex bg-[#050608]/50">
                     {fileId && (
-                      <a 
-                        href={`https://drive.google.com/file/d/${fileId}/view`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button 
+                        onClick={() => setPreviewFileId(previewFileId === fileId ? null : fileId)}
                         className="flex-1 py-3 text-center text-sm font-medium text-accent-blue hover:bg-accent-blue hover:text-white transition-colors border-r border-accent-blue/10 flex items-center justify-center gap-2"
                       >
-                        <Eye className="w-4 h-4" /> Lihat
-                      </a>
+                        <Eye className="w-4 h-4" /> {previewFileId === fileId ? 'Tutup Preview' : 'Lihat'}
+                      </button>
                     )}
                     <a 
                       href={fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : file.url}
@@ -158,6 +157,17 @@ export default function PublicProjectPage(props: { params: Promise<{ id: string 
                       <Download className="w-4 h-4" /> Unduh
                     </a>
                   </div>
+                  
+                  {/* Embedded Google Drive Preview (Costs 0 Vercel Bandwidth) */}
+                  {previewFileId === fileId && (
+                    <div className="w-full h-[400px] border-t border-accent-blue/20 bg-gray-900 animate-in slide-in-from-top-2 duration-300">
+                      <iframe 
+                        src={`https://drive.google.com/file/d/${fileId}/preview`} 
+                        className="w-full h-full border-0"
+                        allow="autoplay"
+                      ></iframe>
+                    </div>
+                  )}
                 </div>
               );
             })
