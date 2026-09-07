@@ -181,6 +181,10 @@ export default function ProjectsPage() {
           { title: 'Peta Kawasan Hutan (PDF)', url: '' },
           { title: 'Peta PIPPIB (PDF)', url: '' }
         ];
+      } else if (type === 'Lainnya') {
+        newFiles = [
+          { title: 'Dokumen Proyek', url: '' }
+        ];
       }
     }
 
@@ -292,6 +296,7 @@ export default function ProjectsPage() {
                     <option value="">Pilih Jenis Dokumen...</option>
                     <option value="SPPL">SPPL</option>
                     <option value="UKL UPL">UKL UPL</option>
+                    <option value="Lainnya">Lainnya</option>
                   </select>
                 </div>
                 
