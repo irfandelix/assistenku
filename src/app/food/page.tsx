@@ -176,7 +176,6 @@ export default function FoodCatalogPage() {
                           const uploadRes = await fetch(uploadUrl, {
                             method: 'PUT',
                             headers: {
-                              'Content-Length': file.size.toString(),
                               'Content-Type': file.type
                             },
                             body: file

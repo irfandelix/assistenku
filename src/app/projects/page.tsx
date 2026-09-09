@@ -310,7 +310,6 @@ export default function ProjectsPage() {
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
         headers: {
-          'Content-Length': renamedFile.size.toString(),
           'Content-Type': renamedFile.type
         },
         body: renamedFile

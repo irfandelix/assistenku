@@ -42,13 +42,16 @@ export async function POST(request: Request) {
         throw new Error('Failed to generate Google API token');
     }
 
+    const origin = request.headers.get('origin') || 'https://assistenku.vercel.app';
+
     const initRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${tokenResponse.token}`,
         'Content-Type': 'application/json',
         'X-Upload-Content-Type': fileType || 'application/octet-stream',
-        'X-Upload-Content-Length': fileSize.toString()
+        'X-Upload-Content-Length': fileSize.toString(),
+        'Origin': origin
       },
       body: JSON.stringify({
         name: `${Date.now()}_${fileName}`,
