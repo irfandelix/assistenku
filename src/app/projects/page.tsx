@@ -284,46 +284,57 @@ export default function ProjectsPage() {
       const formData = new FormData();
       
       const fileTitle = currentProject.files[index].title.replace(/[^a-zA-Z0-9 ]/g, '_');
-      // Ganti nama file dengan nama slot agar rapi di dalam folder Google Drive
       const renamedFile = new File([file], `${fileTitle}_${file.name}`, { type: file.type });
-      
-      formData.append('file', renamedFile);
-      // Semua file proyek ini akan masuk ke 1 folder dengan nama proyek
-      formData.append('foodName', `Project_${currentProject.title.replace(/[^a-zA-Z0-9 ]/g, '_')}`);
+      const folderName = `Project_${currentProject.title.replace(/[^a-zA-Z0-9 ]/g, '_')}`;
       
       const loadingFiles = [...currentProject.files];
       loadingFiles[index].url = '#loading'; // Temporary marker
       setCurrentProject({...currentProject, files: loadingFiles});
       
-      const res = await fetch('/api/drive-upload', {
+      // 1. Get Resumable Upload URL from our backend
+      const initRes = await fetch('/api/drive-upload/init', {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: renamedFile.name,
+          fileType: renamedFile.type,
+          fileSize: renamedFile.size,
+          folderName: folderName
+        })
       });
       
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 413 || text.includes('Request Entity Too Large') || text.includes('Payload Too Large')) {
-          throw new Error('Ukuran file terlalu besar (Maksimal 4.5 MB). Silakan kompres file Anda terlebih dahulu.');
-        } else {
-          try {
-            const errData = JSON.parse(text);
-            throw new Error(errData.error || 'Server error');
-          } catch (e) {
-            throw new Error(`Upload gagal: ${text.substring(0, 50)}`);
-          }
-        }
-      }
+      if (!initRes.ok) throw new Error('Gagal inisialisasi upload ke Google Drive');
+      const { uploadUrl } = await initRes.json();
       
-      const data = await res.json();
+      // 2. Upload file bytes directly to Google Drive (Bypass Vercel entirely!)
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Length': renamedFile.size.toString(),
+          'Content-Type': renamedFile.type
+        },
+        body: renamedFile
+      });
+      
+      if (!uploadRes.ok) throw new Error('Gagal mengirim data ke Google Drive');
+      const driveData = await uploadRes.json();
+      
+      // 3. Finalize upload (Make public and get web links)
+      const finalizeRes = await fetch('/api/drive-upload/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId: driveData.id })
+      });
+      
+      if (!finalizeRes.ok) throw new Error('Gagal memproses file di server');
+      const data = await finalizeRes.json();
+      
       if (data.success) {
         const newFiles = [...currentProject.files];
         newFiles[index].url = data.webViewLink || data.url;
         setCurrentProject({...currentProject, files: newFiles});
       } else {
-        alert(data.error);
-        const resetFiles = [...currentProject.files];
-        resetFiles[index].url = '';
-        setCurrentProject({...currentProject, files: resetFiles});
+        throw new Error(data.error);
       }
     } catch (err: any) {
       alert('Gagal mengunggah: ' + err.message);

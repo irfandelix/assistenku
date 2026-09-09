@@ -159,31 +159,45 @@ export default function FoodCatalogPage() {
                           // Tampilkan pesan loading sementata di input URL
                           setCurrentFood({...currentFood, imageUrl: 'Mengunggah ke Google Drive...'});
                           
-                          const res = await fetch('/api/drive-upload', {
+                          const initRes = await fetch('/api/drive-upload/init', {
                             method: 'POST',
-                            body: formData
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              fileName: file.name,
+                              fileType: file.type,
+                              fileSize: file.size,
+                              folderName: currentFood.name || 'Kuliner'
+                            })
                           });
                           
-                          if (!res.ok) {
-                            const text = await res.text();
-                            if (res.status === 413 || text.includes('Request Entity Too Large') || text.includes('Payload Too Large')) {
-                              throw new Error('Ukuran gambar terlalu besar (Maksimal 4.5 MB). Silakan kompres gambar Anda terlebih dahulu.');
-                            } else {
-                              try {
-                                const errData = JSON.parse(text);
-                                throw new Error(errData.error || 'Server error');
-                              } catch (e) {
-                                throw new Error(`Upload gagal: ${text.substring(0, 50)}`);
-                              }
-                            }
-                          }
+                          if (!initRes.ok) throw new Error('Gagal inisialisasi upload ke Google Drive');
+                          const { uploadUrl } = await initRes.json();
+                          
+                          const uploadRes = await fetch(uploadUrl, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Length': file.size.toString(),
+                              'Content-Type': file.type
+                            },
+                            body: file
+                          });
+                          
+                          if (!uploadRes.ok) throw new Error('Gagal mengirim data ke Google Drive');
+                          const driveData = await uploadRes.json();
+                          
+                          const finalizeRes = await fetch('/api/drive-upload/finalize', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ fileId: driveData.id })
+                          });
+                          
+                          if (!finalizeRes.ok) throw new Error('Gagal memproses file di server');
+                          const data = await finalizeRes.json();
 
-                          const data = await res.json();
                           if (data.success) {
                             setCurrentFood({...currentFood, imageUrl: data.url});
                           } else {
-                            alert(data.error);
-                            setCurrentFood({...currentFood, imageUrl: ''});
+                            throw new Error(data.error);
                           }
                         } catch (err: any) {
                           alert('Gagal mengunggah: ' + err.message);
