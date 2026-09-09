@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 
 export async function POST(request: Request) {
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     let targetFolderId = parentFolderId;
     if (folderName) {
       try {
-        const query = \mimeType='application/vnd.google-apps.folder' and name='\' and '\' in parents and trashed=false\;
+        const query = `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace(/'/g, "\\'")}' and '${parentFolderId}' in parents and trashed=false`;
         const searchRes = await drive.files.list({ q: query, fields: 'files(id)', spaces: 'drive' });
         if (searchRes.data.files && searchRes.data.files.length > 0) {
           targetFolderId = searchRes.data.files[0].id!;
@@ -45,13 +45,13 @@ export async function POST(request: Request) {
     const initRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
       method: 'POST',
       headers: {
-        'Authorization': \Bearer \\,
+        'Authorization': `Bearer ${tokenResponse.token}`,
         'Content-Type': 'application/json',
         'X-Upload-Content-Type': fileType || 'application/octet-stream',
         'X-Upload-Content-Length': fileSize.toString()
       },
       body: JSON.stringify({
-        name: \\_\\,
+        name: `${Date.now()}_${fileName}`,
         parents: [targetFolderId]
       })
     });

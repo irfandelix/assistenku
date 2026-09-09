@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 
 export async function POST(request: Request) {
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      url: \https://drive.google.com/uc?id=\\,
+      url: `https://drive.google.com/uc?id=${fileId}`,
       webViewLink: getRes.data.webViewLink
     });
   } catch (err: any) {
