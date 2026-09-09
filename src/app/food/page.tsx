@@ -164,6 +164,20 @@ export default function FoodCatalogPage() {
                             body: formData
                           });
                           
+                          if (!res.ok) {
+                            const text = await res.text();
+                            if (res.status === 413 || text.includes('Request Entity Too Large') || text.includes('Payload Too Large')) {
+                              throw new Error('Ukuran gambar terlalu besar (Maksimal 4.5 MB). Silakan kompres gambar Anda terlebih dahulu.');
+                            } else {
+                              try {
+                                const errData = JSON.parse(text);
+                                throw new Error(errData.error || 'Server error');
+                              } catch (e) {
+                                throw new Error(`Upload gagal: ${text.substring(0, 50)}`);
+                              }
+                            }
+                          }
+
                           const data = await res.json();
                           if (data.success) {
                             setCurrentFood({...currentFood, imageUrl: data.url});
