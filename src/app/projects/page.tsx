@@ -246,9 +246,11 @@ export default function ProjectsPage() {
         newFiles = [
           { title: 'Peta Tapak Proyek (ZIP)', url: '' },
           { title: 'Peta Tapak Proyek (PDF)', url: '' },
-          { title: 'Peta Pemantauan (ZIP)', url: '' },
+          { title: 'Area Pemantauan (ZIP)', url: '' },
+          { title: 'Titik Pemantauan (ZIP)', url: '' },
           { title: 'Peta Pemantauan (PDF)', url: '' },
-          { title: 'Peta Pengelolaan (ZIP)', url: '' },
+          { title: 'Area Pengelolaan (ZIP)', url: '' },
+          { title: 'Titik Pengelolaan (ZIP)', url: '' },
           { title: 'Peta Pengelolaan (PDF)', url: '' },
           { title: 'Peta Kawasan Hutan (PDF)', url: '' },
           { title: 'Peta PIPPIB (PDF)', url: '' }
