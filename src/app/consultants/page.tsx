@@ -1,11 +1,11 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Users, Plus, Phone, Trash2, Edit2, X, Check, ArrowLeft, Share2, FolderOpen } from 'lucide-react';
 import Link from 'next/link';
-import LayoutWrapper from '@/components/LayoutWrapper';
+import Navigation from '@/components/Navigation';
 
 export default function ConsultantsPage() {
   const [consultants, setConsultants] = useState<any[]>([]);
@@ -98,31 +98,33 @@ export default function ConsultantsPage() {
   };
 
   return (
-    <LayoutWrapper>
-      <div className="h-[100dvh] flex flex-col pb-20 animate-in fade-in duration-500 overflow-hidden">
-        <header className="flex items-center gap-4 px-4 sm:px-6 py-6 shrink-0">
-          <Link href="/projects" className="p-2 bg-[#050608] border border-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
-              <Users className="w-6 h-6 text-accent-blue" />
-              Kelola Bucket Konsultan
-            </h1>
-            <p className="text-sm text-gray-400">Setiap bucket adalah link portal pribadi untuk satu konsultan.</p>
-          </div>
-        </header>
+    <>
+      <Navigation />
+      <main className="flex-1 pb-20 md:pb-0 md:pl-72 w-full h-[100dvh]">
+        <div className="h-full flex flex-col overflow-hidden animate-in fade-in duration-500">
+          <header className="flex items-center gap-4 px-6 md:px-10 py-6 md:py-8 shrink-0">
+            <Link href="/projects" className="p-3 bg-[#050608] border border-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
+                <Users className="w-6 h-6 text-accent-blue" />
+                Kelola Bucket Konsultan
+              </h1>
+              <p className="text-sm text-gray-400">Setiap bucket adalah link portal pribadi untuk satu konsultan.</p>
+            </div>
+          </header>
 
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-gray-500">Memuat data...</p>
-          </div>
-        ) : (
-          <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 sm:px-6 pb-6 scrollbar-hide">
-            <div className="flex gap-6 h-full items-start">
-              
-              {consultants.map(c => (
-                <div key={c.id} className="w-[320px] shrink-0 h-[80vh] max-h-[700px] bg-[#050608] border border-gray-800 rounded-[2rem] flex flex-col overflow-hidden shadow-2xl relative">
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-gray-500">Memuat data...</p>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-x-auto overflow-y-hidden px-6 md:px-10 pb-10 scrollbar-hide">
+              <div className="flex gap-8 h-full items-start">
+                
+                {consultants.map(c => (
+                  <div key={c.id} className="w-[380px] shrink-0 h-[80vh] max-h-[750px] bg-[#050608] border border-gray-800 rounded-[2rem] flex flex-col overflow-hidden shadow-2xl relative">
                   
                   {/* Card Header */}
                   <div className="p-6 border-b border-gray-800 bg-[#0a0c10] shrink-0 z-10">
@@ -226,7 +228,7 @@ export default function ConsultantsPage() {
               ))}
 
               {/* Add New Consultant Column */}
-              <div className="w-[320px] shrink-0 h-[80vh] max-h-[700px] flex flex-col">
+              <div className="w-[380px] shrink-0 h-[80vh] max-h-[750px] flex flex-col">
                 {isAdding ? (
                   <div className="bg-[#050608] border border-accent-blue/30 rounded-[2rem] p-6 space-y-4 shadow-xl">
                     <h2 className="text-sm font-bold text-gray-200 uppercase tracking-wider">Konsultan Baru</h2>
@@ -301,6 +303,7 @@ export default function ConsultantsPage() {
           border-radius: 20px;
         }
       `}} />
-    </LayoutWrapper>
+    </main>
+    </>
   );
 }
