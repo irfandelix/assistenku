@@ -120,11 +120,11 @@ export default function ConsultantsPage() {
               <p className="text-gray-500">Memuat data...</p>
             </div>
           ) : (
-            <div className="flex-1 overflow-x-auto overflow-y-hidden px-6 md:px-10 pb-10 scrollbar-hide">
-              <div className="flex gap-8 h-full items-start">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden md:overflow-x-auto md:overflow-y-hidden px-4 md:px-10 pb-20 md:pb-10 scrollbar-hide">
+              <div className="flex flex-col md:flex-row gap-8 md:h-full items-center md:items-start">
                 
                 {consultants.map(c => (
-                  <div key={c.id} className="w-[380px] shrink-0 h-[80vh] max-h-[750px] bg-[#050608] border border-gray-800 rounded-[2rem] flex flex-col overflow-hidden shadow-2xl relative">
+                  <div key={c.id} className="w-full max-w-[400px] md:max-w-none md:w-[380px] shrink-0 h-[70vh] md:h-[80vh] max-h-[750px] bg-[#050608] border border-gray-800 rounded-[2rem] flex flex-col overflow-hidden shadow-2xl relative">
                   
                   {/* Card Header */}
                   <div className="p-6 border-b border-gray-800 bg-[#0a0c10] shrink-0 z-10">
@@ -228,7 +228,7 @@ export default function ConsultantsPage() {
               ))}
 
               {/* Add New Consultant Column */}
-              <div className="w-[380px] shrink-0 h-[80vh] max-h-[750px] flex flex-col">
+              <div className="w-full max-w-[400px] md:max-w-none md:w-[380px] shrink-0 h-[60vh] md:h-[80vh] max-h-[750px] flex flex-col mb-10 md:mb-0">
                 {isAdding ? (
                   <div className="bg-[#050608] border border-accent-blue/30 rounded-[2rem] p-6 space-y-4 shadow-xl">
                     <h2 className="text-sm font-bold text-gray-200 uppercase tracking-wider">Konsultan Baru</h2>
