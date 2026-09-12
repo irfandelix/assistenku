@@ -72,16 +72,14 @@ export default function ConsultantPortalPage(props: { params: Promise<{ id: stri
   }
 
   return (
-    <div className="min-h-screen bg-[#020305] text-white pb-20 selection:bg-accent-blue/30 relative">
-      <div className="fixed inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-5 pointer-events-none"></div>
-      
-      <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8 pt-8 sm:pt-12 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="min-h-screen bg-[#050608] text-white pb-20 selection:bg-accent-blue/30 relative">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-10 pt-8 sm:pt-12 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
         {/* Header Profile */}
-        <div className="bg-[#050608] border border-gray-800 rounded-3xl p-6 mb-8 text-center relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-accent-blue/0 via-accent-blue to-accent-blue/0"></div>
-          <div className="w-16 h-16 bg-accent-blue/10 rounded-full mx-auto flex items-center justify-center mb-4 border border-accent-blue/20">
-            <Users className="w-8 h-8 text-accent-blue" />
+        <div className="bg-[#0a0c10] border border-gray-800 rounded-3xl p-8 mb-10 text-center relative overflow-hidden shadow-lg shadow-black/50">
+          <div className="absolute top-0 left-0 w-full h-1 bg-accent-blue shadow-[0_0_10px_rgba(59,130,246,0.8)]"></div>
+          <div className="w-20 h-20 bg-[#050608] rounded-full mx-auto flex items-center justify-center mb-5 border border-accent-blue/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+            <Users className="w-10 h-10 text-accent-blue" />
           </div>
           <p className="text-accent-blue font-medium text-sm tracking-widest uppercase mb-1">Portal Konsultan</p>
           <h1 className="text-2xl font-bold text-gray-100 mb-2">{consultant.name}</h1>
@@ -107,7 +105,7 @@ export default function ConsultantPortalPage(props: { params: Promise<{ id: stri
                 href={`/p/${proj.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block bg-[#050608] border border-gray-800 rounded-2xl p-5 hover:border-accent-blue/50 hover:bg-[#0a0c10] transition-all group"
+                className="block bg-[#0a0c10] border border-gray-800 rounded-2xl p-6 hover:border-accent-blue/50 hover:bg-[#0f1117] transition-all group shadow-sm shadow-black/20"
               >
                 <div className="flex justify-between items-start gap-4">
                   <div>

@@ -5,7 +5,7 @@ import Navigation from './Navigation';
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isPublicPortal = pathname?.startsWith('/p/');
+  const isPublicPortal = pathname?.startsWith('/p/') || pathname?.startsWith('/c/');
 
   if (isPublicPortal) {
     return <main className="flex-1 w-full">{children}</main>;
