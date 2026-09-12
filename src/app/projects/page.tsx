@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, CheckCircle2, Circle, ExternalLink, MapPin, X, Save, Trash2, Copy, AlertCircle, Clock, CheckCircle, MessageCircle, UploadCloud, Loader2, Check, Map, ArrowRight, Eye, Calendar, Wallet, Link as LinkIcon, ArrowLeft, Upload, ShieldCheck, MapIcon, User, Phone, FileText, Users } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, ExternalLink, MapPin, X, Save, Trash2, Copy, AlertCircle, Clock, CheckCircle, MessageCircle, UploadCloud, Loader2, Check, Map, ArrowRight, Eye, Calendar, Wallet, Link as LinkIcon, ArrowLeft, Upload, ShieldCheck, MapIcon, User, Phone, FileText, Users, ChevronDown } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDocs, where, Timestamp, arrayUnion } from 'firebase/firestore';
 import { clsx } from 'clsx';
@@ -59,6 +59,7 @@ export default function ProjectsPage() {
   const [currentProject, setCurrentProject] = useState(DEFAULT_PROJECT);
 
   const [consultants, setConsultants] = useState<any[]>([]);
+  const [showConsultantDropdown, setShowConsultantDropdown] = useState(false);
 
   const hasFiles = (project: any) => {
     const hasValidFiles = project.files && project.files.some((f: any) => f.url && f.url.trim() !== '' && f.url !== '#loading');
@@ -490,27 +491,40 @@ export default function ProjectsPage() {
                     <span>Nama Konsultan</span>
                     <Link href="/consultants" className="text-xs text-accent-blue hover:underline">Kelola</Link>
                   </label>
-                  <input 
-                    type="text"
-                    list="consultant-names"
-                    value={currentProject.consultantName}
-                    onChange={e => {
-                      const val = e.target.value;
-                      const matched = consultants.find(c => c.name === val);
-                      if (matched && matched.phone) {
-                        setCurrentProject({...currentProject, consultantName: val, consultantNumber: matched.phone});
-                      } else {
+                  <div className="relative">
+                    <input 
+                      type="text"
+                      value={currentProject.consultantName}
+                      onFocus={() => setShowConsultantDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowConsultantDropdown(false), 200)}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setShowConsultantDropdown(true);
                         setCurrentProject({...currentProject, consultantName: val});
-                      }
-                    }}
-                    className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
-                    placeholder="Pilih atau Ketik Nama"
-                  />
-                  <datalist id="consultant-names">
-                    {consultants.map(c => (
-                      <option key={c.id} value={c.name} />
-                    ))}
-                  </datalist>
+                      }}
+                      className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
+                      placeholder="Pilih atau Ketik Nama"
+                    />
+                    <ChevronDown className="absolute right-4 top-3.5 w-5 h-5 text-gray-500 pointer-events-none" />
+                    {showConsultantDropdown && consultants.filter(c => c.name.toLowerCase().includes((currentProject.consultantName || '').toLowerCase())).length > 0 && (
+                      <div className="absolute z-50 w-full mt-2 bg-[#0a0c10] border border-gray-800 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                        {consultants
+                          .filter(c => c.name.toLowerCase().includes((currentProject.consultantName || '').toLowerCase()))
+                          .map(c => (
+                            <div 
+                              key={c.id} 
+                              className="px-4 py-3 hover:bg-accent-blue/10 hover:text-accent-blue cursor-pointer transition-colors text-sm"
+                              onClick={() => {
+                                setCurrentProject({...currentProject, consultantName: c.name, consultantNumber: c.phone || currentProject.consultantNumber});
+                                setShowConsultantDropdown(false);
+                              }}
+                            >
+                              {c.name}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="md:col-span-2">
