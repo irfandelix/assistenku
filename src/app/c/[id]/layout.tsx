@@ -1,4 +1,4 @@
-﻿import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 type Props = { params: Promise<{ id: string }> };
@@ -12,7 +12,7 @@ export async function generateMetadata(props: Props) {
     if (docSnap.exists()) {
       const data = docSnap.data();
       const title = `Daftar Proyek: ${data.name}`;
-      const desc = `Portal akses daftar proyek yang ditugaskan kepada ${data.name}.`;
+      const desc = `Portal akses daftar proyek yang ditugaskan oleh ${data.name}.`;
 
       return {
         title: title,

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, use } from 'react';
 import { db } from '@/lib/firebase';
@@ -85,7 +85,7 @@ export default function ConsultantPortalPage(props: { params: Promise<{ id: stri
           </div>
           <p className="text-accent-blue font-medium text-sm tracking-widest uppercase mb-1">Portal Konsultan</p>
           <h1 className="text-2xl font-bold text-gray-100 mb-2">{consultant.name}</h1>
-          <p className="text-sm text-gray-400">Berikut adalah daftar seluruh proyek yang sedang ditugaskan kepada Anda.</p>
+          <p className="text-sm text-gray-400">Berikut adalah daftar seluruh proyek yang Anda tugaskan kepada kami.</p>
         </div>
 
         {/* Project List */}
@@ -98,7 +98,7 @@ export default function ConsultantPortalPage(props: { params: Promise<{ id: stri
           {projects.length === 0 ? (
             <div className="bg-[#050608] border border-gray-800 rounded-2xl p-8 text-center">
               <FileText className="w-12 h-12 text-gray-700 mx-auto mb-3" />
-              <p className="text-gray-400">Belum ada proyek yang ditugaskan kepada Anda saat ini.</p>
+              <p className="text-gray-400">Belum ada proyek yang Anda tugaskan kepada kami saat ini.</p>
             </div>
           ) : (
             projects.map((proj) => (
