@@ -28,8 +28,9 @@ export default function ConsultantsPage() {
       const consData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
       const projSnap = await getDocs(collection(db, 'projects'));
-      const allProjects = projSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
-
+      const allProjects = projSnap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() as any }))
+        .filter((p: any) => !p.isPaid);
       // Sort projects by newest first
       allProjects.sort((a: any, b: any) => {
         const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
