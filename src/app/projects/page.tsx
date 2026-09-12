@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, CheckCircle2, Circle, ExternalLink, MapPin, X, Save, Trash2, Copy, AlertCircle, Clock, CheckCircle, MessageCircle, UploadCloud, Loader2 } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, ExternalLink, MapPin, X, Save, Trash2, Copy, AlertCircle, Clock, CheckCircle, MessageCircle, UploadCloud, Loader2, Check, Map, ArrowRight, Eye, Calendar, Wallet, Link as LinkIcon, ArrowLeft, Upload, ShieldCheck, MapIcon, User, Phone, FileText, Users } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDocs, where, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDocs, where, Timestamp, arrayUnion } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Link from 'next/link';
@@ -58,6 +58,8 @@ export default function ProjectsPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentProject, setCurrentProject] = useState(DEFAULT_PROJECT);
 
+  const [consultants, setConsultants] = useState<any[]>([]);
+
   const hasFiles = (project: any) => {
     const hasValidFiles = project.files && project.files.some((f: any) => f.url && f.url.trim() !== '' && f.url !== '#loading');
     return hasValidFiles || (project.link && project.link.trim() !== '');
@@ -76,6 +78,13 @@ export default function ProjectsPage() {
       
       setProjects(data);
     });
+
+    const getConsultants = async () => {
+      const snap = await getDocs(query(collection(db, 'consultants'), orderBy('name', 'asc')));
+      setConsultants(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    };
+    getConsultants();
+
     return () => unsubscribe();
   }, []);
 
@@ -348,17 +357,30 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-500">
       {!isEditing && (
-        <header className="flex justify-between items-center">
+        <header className="flex justify-between items-center relative z-10">
           <div>
-            <p className="text-accent-blue font-medium text-sm tracking-widest uppercase mb-1">Manajemen</p>
-            <h1 className="text-2xl font-bold text-gray-100">Daftar Proyek</h1>
+            <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
+              <Map className="w-6 h-6 text-accent-blue" />
+              Proyek
+            </h1>
+            <p className="text-sm text-gray-400">Kelola dan pantau seluruh proyek Anda.</p>
           </div>
-          <button 
-            onClick={() => openEditor()}
-            className="bg-accent-blue text-white p-3 rounded-xl shadow-lg hover:bg-blue-600 transition-transform active:scale-95"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+          <div className="flex gap-2">
+            <Link 
+              href="/consultants"
+              className="p-3 bg-gray-900 border border-gray-800 rounded-xl text-gray-400 hover:text-accent-blue transition-colors flex items-center justify-center shadow-lg"
+              title="Kelola Konsultan"
+            >
+              <Users className="w-5 h-5" />
+            </Link>
+            <button 
+              onClick={() => openEditor()}
+              className="bg-accent-blue hover:bg-blue-600 text-white p-3 rounded-xl shadow-lg shadow-blue-500/20 transition-transform active:scale-95 flex items-center justify-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="hidden sm:inline font-bold">Tambah Proyek</span>
+            </button>
+          </div>
         </header>
       )}
 
@@ -464,14 +486,31 @@ export default function ProjectsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-400">Nama Konsultan</label>
+                  <label className="block text-sm font-medium mb-1 text-gray-400 flex justify-between items-center">
+                    <span>Nama Konsultan</span>
+                    <Link href="/consultants" className="text-xs text-accent-blue hover:underline">Kelola</Link>
+                  </label>
                   <input 
                     type="text"
+                    list="consultant-names"
                     value={currentProject.consultantName}
-                    onChange={e => setCurrentProject({...currentProject, consultantName: e.target.value})}
+                    onChange={e => {
+                      const val = e.target.value;
+                      const matched = consultants.find(c => c.name === val);
+                      if (matched && matched.phone) {
+                        setCurrentProject({...currentProject, consultantName: val, consultantNumber: matched.phone});
+                      } else {
+                        setCurrentProject({...currentProject, consultantName: val});
+                      }
+                    }}
                     className="w-full bg-[#050608] border border-gray-800 text-gray-100 rounded-xl px-4 py-3 outline-none focus:border-accent-blue transition-colors"
-                    placeholder="Nama Konsultan"
+                    placeholder="Pilih atau Ketik Nama"
                   />
+                  <datalist id="consultant-names">
+                    {consultants.map(c => (
+                      <option key={c.id} value={c.name} />
+                    ))}
+                  </datalist>
                 </div>
 
                 <div className="md:col-span-2">
