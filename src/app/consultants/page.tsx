@@ -98,10 +98,7 @@ export default function ConsultantsPage() {
   };
 
   return (
-    <>
-      <Navigation />
-      <main className="flex-1 pb-20 md:pb-0 md:pl-72 w-full h-[100dvh]">
-        <div className="h-full flex flex-col overflow-hidden animate-in fade-in duration-500">
+    <div className="h-[100dvh] flex flex-col overflow-hidden animate-in fade-in duration-500">
           <header className="flex items-center gap-4 px-6 md:px-10 py-6 md:py-8 shrink-0">
             <Link href="/projects" className="p-3 bg-[#050608] border border-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors">
               <ArrowLeft className="w-5 h-5" />
@@ -303,7 +300,6 @@ export default function ConsultantsPage() {
           border-radius: 20px;
         }
       `}} />
-    </main>
-    </>
+    </div>
   );
 }
