@@ -1,9 +1,9 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Users, Plus, Phone, Trash2, Edit2, X, Check, ArrowLeft } from 'lucide-react';
+import { Users, Plus, Phone, Trash2, Edit2, X, Check, ArrowLeft, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import LayoutWrapper from '@/components/LayoutWrapper';
 
@@ -12,6 +12,7 @@ export default function ConsultantsPage() {
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [newConsultant, setNewConsultant] = useState({ name: '', phone: '' });
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', phone: '' });
@@ -31,6 +32,13 @@ export default function ConsultantsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopyLink = (id: string) => {
+    const url = `${window.location.origin}/c/${id}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleAdd = async () => {
@@ -172,6 +180,13 @@ export default function ConsultantsPage() {
                       </p>
                     </div>
                     <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleCopyLink(c.id)}
+                        className="p-2 text-gray-500 hover:text-green-500 bg-gray-900 rounded-lg relative"
+                        title="Salin Link Bucket"
+                      >
+                        {copiedId === c.id ? <Check className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4" />}
+                      </button>
                       <button 
                         onClick={() => { setEditingId(c.id); setEditForm({ name: c.name, phone: c.phone || '' }); }}
                         className="p-2 text-gray-500 hover:text-accent-blue bg-gray-900 rounded-lg"
