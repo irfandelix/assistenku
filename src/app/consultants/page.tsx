@@ -98,6 +98,7 @@ export default function ConsultantsPage() {
   };
 
   return (
+    <>
     <div className="h-[100dvh] flex flex-col overflow-hidden animate-in fade-in duration-500">
           <header className="flex items-center gap-4 px-6 md:px-10 py-6 md:py-8 shrink-0">
             <Link href="/projects" className="p-3 bg-[#050608] border border-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors">
@@ -300,6 +301,6 @@ export default function ConsultantsPage() {
           border-radius: 20px;
         }
       `}} />
-    </div>
+    </>
   );
 }
