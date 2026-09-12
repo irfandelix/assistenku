@@ -51,7 +51,7 @@ export default function ConsultantsPage() {
   };
 
   const handleCopyLink = (id: string) => {
-    const url = `${window.location.origin}/c/${id}`;
+    const url = `https://proyekirfan.vercel.app/c/${id}`;
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
