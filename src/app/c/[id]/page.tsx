@@ -27,8 +27,9 @@ export default function ConsultantPortalPage(props: { params: Promise<{ id: stri
           );
           
           const projSnap = await getDocs(q);
-          const projData = projSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-          
+          const projData = projSnap.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .filter((p: any) => !p.isPaid);
           // Sort locally by creation date descending
           projData.sort((a: any, b: any) => {
             const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
@@ -83,7 +84,7 @@ export default function ConsultantPortalPage(props: { params: Promise<{ id: stri
           </div>
           <p className="text-accent-blue font-medium text-sm tracking-widest uppercase mb-1">Portal Konsultan</p>
           <h1 className="text-2xl font-bold text-gray-100 mb-2">{consultant.name}</h1>
-          <p className="text-sm text-gray-400">Berikut adalah daftar seluruh proyek yang Anda tugaskan kepada kami.</p>
+          <p className="text-sm text-gray-400">Berikut adalah daftar seluruh proyek aktif yang Anda tugaskan kepada kami.</p>
         </div>
 
         {/* Project List */}
