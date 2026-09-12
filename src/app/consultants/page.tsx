@@ -25,8 +25,18 @@ export default function ConsultantsPage() {
     try {
       const q = query(collection(db, 'consultants'), orderBy('name', 'asc'));
       const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setConsultants(data);
+      const consData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      // Ambil semua proyek untuk di-mapping ke konsultan
+      const projSnap = await getDocs(collection(db, 'projects'));
+      const allProjects = projSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+
+      const dataWithProjects = consData.map((c: any) => ({
+        ...c,
+        projects: allProjects.filter(p => p.consultantName === c.name)
+      }));
+
+      setConsultants(dataWithProjects);
     } catch (error) {
       console.error('Error fetching consultants:', error);
     } finally {
@@ -172,12 +182,24 @@ export default function ConsultantsPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-between items-center">
-                    <div>
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1">
                       <p className="text-gray-200 font-bold">{c.name}</p>
                       <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                         <Phone className="w-3 h-3" /> {c.phone || '-'}
                       </p>
+                      {c.projects && c.projects.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-800">
+                          <p className="text-xs text-gray-400 mb-2">Proyek Aktif:</p>
+                          <ul className="space-y-1">
+                            {c.projects.map((p: any) => (
+                              <li key={p.id} className="text-xs text-accent-blue truncate">
+                                • {p.title}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <button 
