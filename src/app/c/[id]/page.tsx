@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { Map as MapIcon, Users, FileText, ArrowRight, FolderOpen, Loader2 } from 'lucide-react';
+import { Map as MapIcon, Users, FileText, ArrowRight, FolderOpen, Loader2, Calendar } from 'lucide-react';
 
 export default function ConsultantPortalPage(props: { params: Promise<{ id: string }> }) {
   const params = use(props.params);
@@ -115,7 +115,7 @@ export default function ConsultantPortalPage(props: { params: Promise<{ id: stri
                     <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-400 mt-2">
                       {proj.client && (
                         <span className="flex items-center gap-1.5">
-                          <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" /> {proj.client}
+                          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" /> {proj.client}
                         </span>
                       )}
                       {proj.documentType && (
