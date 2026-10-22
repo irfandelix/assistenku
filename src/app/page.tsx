@@ -4,180 +4,302 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, limit, where } from 'firebase/firestore';
-import { Wallet, Map, CheckSquare, FileText, ArrowRight, TrendingUp, TrendingDown, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
-import { startOfDay, endOfDay } from 'date-fns';
-import FinanceChart from '@/components/FinanceChart';
+import { 
+  Map, 
+  Users, 
+  Wallet, 
+  Handshake, 
+  CheckSquare, 
+  FileText, 
+  Target, 
+  ShoppingBag, 
+  Activity, 
+  Utensils, 
+  Laptop, 
+  Sparkles,
+  ArrowUpRight,
+  ShieldCheck,
+  Calendar
+} from 'lucide-react';
 import AIAssistant from '@/components/AIAssistant';
 
 export default function Home() {
   const [balance, setBalance] = useState(0);
-  const [todayExpense, setTodayExpense] = useState(0);
-  const [transactions, setTransactions] = useState<any[]>([]);
   const [activeProjects, setActiveProjects] = useState(0);
+  const [consultantCount, setConsultantCount] = useState(0);
+  const [debtCount, setDebtCount] = useState(0);
   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0 });
-  const [recentNotes, setRecentNotes] = useState<any[]>([]);
+  const [recentNotesCount, setRecentNotesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // ... (keep the rest identical until the return block, wait, I can't use replace_file_content across the whole file easily if I omit code. I need to be precise)
-
   useEffect(() => {
-    // Finance Listener
+    // 1. Finance Listener
     const qFinance = query(collection(db, 'finance'), orderBy('createdAt', 'desc'));
     const unsubFinance = onSnapshot(qFinance, (snapshot) => {
       let total = 0;
-      let expensesToday = 0;
-      const start = startOfDay(new Date()).getTime();
-      const end = endOfDay(new Date()).getTime();
-      const txs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
-
-      txs.forEach(data => {
+      snapshot.docs.forEach(doc => {
+        const data = doc.data() as any;
         if (data.type === 'income') total += data.amount;
-        if (data.type === 'expense') {
-          total -= data.amount;
-          const time = data.createdAt?.toMillis() || 0;
-          if (time >= start && time <= end) {
-            expensesToday += data.amount;
-          }
-        }
+        if (data.type === 'expense') total -= data.amount;
       });
       setBalance(total);
-      setTodayExpense(expensesToday);
-      setTransactions(txs);
     });
 
-    // Projects Listener
+    // 2. Active Projects Listener
     const qProjects = query(collection(db, 'projects'), where('isPaid', '==', false));
     const unsubProjects = onSnapshot(qProjects, (snapshot) => {
       setActiveProjects(snapshot.docs.length);
     });
 
-    // Todo Listener
+    // 3. Consultants Listener
+    const qCons = query(collection(db, 'consultants'));
+    const unsubCons = onSnapshot(qCons, (snapshot) => {
+      setConsultantCount(snapshot.docs.length);
+    });
+
+    // 4. Debts Listener
+    const qDebts = query(collection(db, 'debts'), where('isSettled', '==', false));
+    const unsubDebts = onSnapshot(qDebts, (snapshot) => {
+      setDebtCount(snapshot.docs.length);
+    });
+
+    // 5. Todo Listener
     const qTodo = query(collection(db, 'todos'));
     const unsubTodo = onSnapshot(qTodo, (snapshot) => {
       let completed = 0;
       let totalToday = 0;
-
       snapshot.docs.forEach(doc => {
         const data = doc.data();
-        if (data.done) {
-          completed++;
-        }
+        if (data.done) completed++;
         totalToday++;
       });
       setTaskStats({ total: totalToday, completed });
     });
 
-    // Notes Listener
-    const qNotes = query(collection(db, 'notes'), orderBy('createdAt', 'desc'), limit(2));
+    // 6. Notes Listener
+    const qNotes = query(collection(db, 'notes'));
     const unsubNotes = onSnapshot(qNotes, (snapshot) => {
-      setRecentNotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setRecentNotesCount(snapshot.docs.length);
       setLoading(false);
     });
 
     return () => {
       unsubFinance();
       unsubProjects();
+      unsubCons();
+      unsubDebts();
       unsubTodo();
       unsubNotes();
     };
   }, []);
 
-  const progressPercent = taskStats.total === 0 ? 0 : Math.round((taskStats.completed / taskStats.total) * 100);
+  const todayFormatted = new Date().toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const menuIcons = [
+    {
+      title: 'Proyek',
+      description: 'Kelola berkas & status klien',
+      href: '/projects',
+      badge: `${activeProjects} Aktif`,
+      icon: Map,
+      gradient: 'from-blue-600 to-indigo-600',
+      shadow: 'shadow-blue-600/25',
+      glow: 'group-hover:border-blue-500/40',
+      badgeColor: 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+    },
+    {
+      title: 'Konsultan',
+      description: 'Bucket & kirim link WhatsApp',
+      href: '/consultants',
+      badge: `${consultantCount} Konsultan`,
+      icon: Users,
+      gradient: 'from-indigo-600 to-purple-600',
+      shadow: 'shadow-indigo-600/25',
+      glow: 'group-hover:border-indigo-500/40',
+      badgeColor: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
+    },
+    {
+      title: 'Keuangan',
+      description: 'Arus kas & mutasi saldo',
+      href: '/finance',
+      badge: `Rp ${(balance / 1000).toFixed(0)}k`,
+      icon: Wallet,
+      gradient: 'from-emerald-500 to-teal-600',
+      shadow: 'shadow-emerald-500/25',
+      glow: 'group-hover:border-emerald-500/40',
+      badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+    },
+    {
+      title: 'Hutang / Piutang',
+      description: 'Pencatat tagihan & pinjaman',
+      href: '/debts',
+      badge: `${debtCount} Berjalan`,
+      icon: Handshake,
+      gradient: 'from-amber-500 to-orange-600',
+      shadow: 'shadow-amber-500/25',
+      glow: 'group-hover:border-amber-500/40',
+      badgeColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+    },
+    {
+      title: 'Tugas (To-Do)',
+      description: 'Daftar kerjaan harian',
+      href: '/todo',
+      badge: `${taskStats.completed}/${taskStats.total} Selesai`,
+      icon: CheckSquare,
+      gradient: 'from-cyan-500 to-blue-600',
+      shadow: 'shadow-cyan-500/25',
+      glow: 'group-hover:border-cyan-500/40',
+      badgeColor: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30'
+    },
+    {
+      title: 'Catatan Ide',
+      description: 'Memo & ringkasan cepat',
+      href: '/notes',
+      badge: `${recentNotesCount} Catatan`,
+      icon: FileText,
+      gradient: 'from-orange-500 to-amber-600',
+      shadow: 'shadow-orange-500/25',
+      glow: 'group-hover:border-orange-500/40',
+      badgeColor: 'bg-orange-500/15 text-orange-400 border-orange-500/30'
+    },
+    {
+      title: 'Target Tabungan',
+      description: 'Goals & rencana finansial',
+      href: '/goals',
+      badge: 'Tabungan',
+      icon: Target,
+      gradient: 'from-pink-500 to-rose-600',
+      shadow: 'shadow-pink-500/25',
+      glow: 'group-hover:border-pink-500/40',
+      badgeColor: 'bg-pink-500/15 text-pink-400 border-pink-500/30'
+    },
+    {
+      title: 'Pengendali Hasrat',
+      description: 'Wishlist belanja terkontrol',
+      href: '/wishlist',
+      badge: 'Wishlist',
+      icon: ShoppingBag,
+      gradient: 'from-purple-500 to-violet-600',
+      shadow: 'shadow-purple-500/25',
+      glow: 'group-hover:border-purple-500/40',
+      badgeColor: 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+    },
+    {
+      title: 'Mood & Habits',
+      description: 'Kesehatan mental & kebiasaan',
+      href: '/mood',
+      badge: 'Kesehatan',
+      icon: Activity,
+      gradient: 'from-teal-500 to-emerald-600',
+      shadow: 'shadow-teal-500/25',
+      glow: 'group-hover:border-teal-500/40',
+      badgeColor: 'bg-teal-500/15 text-teal-400 border-teal-500/30'
+    },
+    {
+      title: 'Katalog Kuliner',
+      description: 'Tempat makan & kuliner favorit',
+      href: '/food',
+      badge: 'Kuliner',
+      icon: Utensils,
+      gradient: 'from-red-500 to-orange-600',
+      shadow: 'shadow-red-500/25',
+      glow: 'group-hover:border-red-500/40',
+      badgeColor: 'bg-red-500/15 text-red-400 border-red-500/30'
+    },
+    {
+      title: 'Remote Desktop',
+      description: 'Akses desktop jarak jauh',
+      href: '/remote',
+      badge: 'Remote',
+      icon: Laptop,
+      gradient: 'from-sky-500 to-blue-600',
+      shadow: 'shadow-sky-500/25',
+      glow: 'group-hover:border-sky-500/40',
+      badgeColor: 'bg-sky-500/15 text-sky-400 border-sky-500/30'
+    }
+  ];
 
   const contextData = `
 Total Saldo: Rp ${balance.toLocaleString('id-ID')}
-Pengeluaran Hari Ini: Rp ${todayExpense.toLocaleString('id-ID')}
 Proyek Aktif: ${activeProjects}
+Konsultan: ${consultantCount}
 Tugas Selesai: ${taskStats.completed} dari ${taskStats.total}
   `.trim();
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <header className="pt-2 flex justify-between items-center">
-        <div>
-          <p className="text-neon font-medium text-sm tracking-widest uppercase mb-1">Informasi</p>
-          <h1 className="text-3xl font-bold text-gray-100 tracking-tight">Delix's Assistant</h1>
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-6xl mx-auto pb-12">
+      
+      {/* Top Greeting Header */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-white/[0.08]">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34D399]"></span>
+            <span className="text-xs font-bold tracking-widest text-emerald-400 uppercase">ASSISTENKU ONLINE</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Pusat Menu & Fitur
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-400 flex items-center gap-1.5 pt-0.5">
+            <Calendar className="w-3.5 h-3.5 text-gray-500" />
+            {todayFormatted}
+          </p>
         </div>
-        <div className="w-10 h-10 rounded-full bg-darkcard border border-gray-800 flex items-center justify-center p-2">
-          <img src="/logo.svg" alt="D Checklist Logo" className="w-full h-full object-contain" />
+
+        <div className="flex items-center gap-3">
+          <AIAssistant contextData={contextData} />
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Finance Card */}
-        <div className="bg-darkcard border border-gray-800 rounded-3xl p-5 hover:border-gray-700 transition-all active:scale-[0.98] group flex flex-col">
-          <Link href="/finance" className="flex justify-between items-start mb-6">
-            <div className="w-12 h-12 rounded-xl bg-neon/10 flex items-center justify-center">
-              <Wallet className="w-6 h-6 text-neon" />
-            </div>
-            <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-neon transition-colors" />
-          </Link>
-          <p className="text-gray-400 text-sm font-medium">Total Saldo</p>
-          <h2 className="text-3xl font-bold text-gray-100 mt-1 mb-6">Rp {balance.toLocaleString('id-ID')}</h2>
-          
-          <div className="-mx-2 flex-1">
-            <FinanceChart transactions={transactions} height={120} />
-          </div>
-        </div>
+      {/* Main Interactive Icon Menu Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3.5 sm:gap-4 lg:gap-5">
+        {menuIcons.map((item, idx) => {
+          const Icon = item.icon;
 
-        {/* Projects & Tasks Combo */}
-        <div className="flex flex-col gap-4">
-          <Link href="/projects" className="bg-darkcard border border-gray-800 rounded-3xl p-5 hover:border-gray-700 transition-all active:scale-[0.98] flex items-center justify-between group">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-accent-blue/10 flex items-center justify-center">
-                <Map className="w-6 h-6 text-accent-blue" />
-              </div>
-              <div>
-                <p className="text-gray-400 text-sm font-medium">Proyek Aktif</p>
-                <h3 className="text-xl font-bold text-gray-100">{activeProjects} Klien</h3>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-accent-blue transition-colors" />
-          </Link>
-
-          <Link href="/todo" className="bg-darkcard border border-gray-800 rounded-3xl p-5 hover:border-gray-700 transition-all active:scale-[0.98] group relative overflow-hidden">
-            <div className="absolute top-0 left-0 h-1 bg-neon transition-all" style={{ width: `${progressPercent}%` }} />
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-gray-400 text-sm font-medium mb-1">Progress Tugas</p>
-                <div className="flex items-baseline gap-2">
-                  <h3 className="text-2xl font-bold text-gray-100">{taskStats.completed}</h3>
-                  <span className="text-gray-500 font-medium">/ {taskStats.total} Selesai</span>
+          return (
+            <Link
+              key={idx}
+              href={item.href}
+              className={`group bg-[#0E131F]/90 backdrop-blur-md border border-white/[0.08] ${item.glow} hover:bg-[#131929] rounded-3xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-200 active:scale-95 shadow-xl hover:shadow-2xl relative overflow-hidden`}
+            >
+              {/* Top Row: Icon & Arrow */}
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br ${item.gradient} text-white flex items-center justify-center shadow-lg ${item.shadow} group-hover:scale-105 transition-transform duration-200`}>
+                  <Icon className="w-7 h-7 sm:w-8 sm:h-8" />
+                </div>
+                <div className="w-8 h-8 rounded-full bg-white/[0.04] group-hover:bg-white/[0.1] text-gray-400 group-hover:text-white flex items-center justify-center transition-colors">
+                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </div>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-gray-800/50 flex items-center justify-center">
-                <CheckSquare className="w-6 h-6 text-gray-400 group-hover:text-neon transition-colors" />
+
+              {/* Title & Description */}
+              <div className="space-y-1">
+                <h3 className="font-bold text-base sm:text-lg text-white group-hover:text-blue-400 transition-colors tracking-tight">
+                  {item.title}
+                </h3>
+                <p className="text-xs text-gray-400 line-clamp-1 leading-relaxed">
+                  {item.description}
+                </p>
               </div>
-            </div>
-          </Link>
-        </div>
+
+              {/* Bottom Badge */}
+              <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${item.badgeColor}`}>
+                  {item.badge}
+                </span>
+                <span className="text-[11px] text-gray-500 font-medium group-hover:text-gray-300 transition-colors">
+                  Buka &rarr;
+                </span>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
-      {/* Quick Notes */}
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-gray-200">Catatan Terbaru</h2>
-          <Link href="/notes" className="text-sm text-neon font-medium hover:underline flex items-center gap-1">
-            Lihat Semua <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          {recentNotes.length === 0 && !loading && (
-            <div className="col-span-2 text-center py-8 border border-dashed border-gray-800 rounded-2xl">
-              <p className="text-gray-500 text-sm">Belum ada catatan.</p>
-            </div>
-          )}
-          {recentNotes.map((note) => (
-            <div key={note.id} className="bg-darkcard border border-gray-800 p-4 rounded-2xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-accent-orange" />
-              <p className="text-xs text-accent-orange font-medium mb-2 uppercase tracking-wider">{note.category || 'Idea'}</p>
-              <p className="text-sm text-gray-300 line-clamp-3 leading-relaxed">{note.text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <AIAssistant contextData={contextData} />
     </div>
   );
 }
