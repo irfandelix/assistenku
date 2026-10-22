@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Wallet, CheckSquare, Map, FileText, Handshake } from 'lucide-react';
+import { LayoutDashboard, Wallet, CheckSquare, Map, FileText, Handshake, Users } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -15,10 +15,10 @@ export default function Navigation() {
 
   const links = [
     { href: '/', label: 'Home', icon: LayoutDashboard },
-    { href: '/finance', label: 'Finance', icon: Wallet },
-    { href: '/debts', label: 'Debts', icon: Handshake },
-    { href: '/projects', label: 'Projects', icon: Map },
-    { href: '/more', label: 'More', icon: FileText },
+    { href: '/projects', label: 'Proyek', icon: Map },
+    { href: '/consultants', label: 'Konsultan', icon: Users },
+    { href: '/finance', label: 'Keuangan', icon: Wallet },
+    { href: '/more', label: 'Lainnya', icon: FileText },
   ];
 
   return (

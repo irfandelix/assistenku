@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { CheckSquare, FileText, Settings, User, Target, Tv, Activity, ShoppingBag, Heart, Utensils, Laptop } from 'lucide-react';
+import { CheckSquare, FileText, Settings, User, Target, Tv, Activity, ShoppingBag, Heart, Utensils, Laptop, Handshake } from 'lucide-react';
 
 export default function MorePage() {
   const menuItems = [
+    { title: 'Daftar Hutang & Piutang (Debts)', icon: Handshake, href: '/debts', color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
     { title: 'Tugas Harian (To-Do)', icon: CheckSquare, href: '/todo', color: 'text-accent-blue', bg: 'bg-accent-blue/10' },
     { title: 'Target Tabungan (Goals)', icon: Target, href: '/goals', color: 'text-neon', bg: 'bg-neon/10' },
     { title: 'Pengendali Hasrat (Wishlist)', icon: ShoppingBag, href: '/wishlist', color: 'text-orange-500', bg: 'bg-orange-500/10' },

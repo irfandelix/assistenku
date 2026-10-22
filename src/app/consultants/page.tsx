@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { Users, Plus, Phone, Trash2, Edit2, X, Check, ArrowLeft, Share2, FolderOpen } from 'lucide-react';
+import { Users, Plus, Phone, Trash2, Edit2, X, Check, ArrowLeft, Share2, FolderOpen, MessageCircle, Copy, ExternalLink, Send } from 'lucide-react';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 
@@ -51,8 +51,47 @@ export default function ConsultantsPage() {
     }
   };
 
+  const getPortalUrl = (id: string) => {
+    if (typeof window !== 'undefined' && window.location.origin) {
+      return `${window.location.origin}/c/${id}`;
+    }
+    return `https://assistenku.vercel.app/c/${id}`;
+  };
+
+  const formatPhoneNumber = (phone: string) => {
+    let cleaned = phone.replace(/[^0-9]/g, '');
+    if (cleaned.startsWith('0')) {
+      cleaned = '62' + cleaned.slice(1);
+    }
+    return cleaned;
+  };
+
+  const getWhatsAppMessage = (name: string, id: string) => {
+    const url = getPortalUrl(id);
+    return `Halo Pak/Bu *${name}*,\n\nBerikut tautan portal pribadi Anda untuk melihat dan mengunduh berkas proyek:\n👉 ${url}\n\nSeluruh berkas yang telah selesai dapat langsung diunduh melalui tautan di atas. Terima kasih! 🙏`;
+  };
+
+  const handleSendWhatsApp = (c: any) => {
+    const message = getWhatsAppMessage(c.name, c.id);
+    if (c.phone && c.phone.trim() !== '') {
+      const formatted = formatPhoneNumber(c.phone);
+      window.open(`https://wa.me/${formatted}?text=${encodeURIComponent(message)}`, '_blank');
+    } else {
+      const inputPhone = prompt(`Konsultan "${c.name}" belum memiliki nomor WhatsApp.\n\nMasukkan nomor HP/WA konsultan untuk langsung membuka WhatsApp (atau batalkan untuk menyalin pesan saja):`);
+      if (inputPhone && inputPhone.trim()) {
+        const formatted = formatPhoneNumber(inputPhone);
+        window.open(`https://wa.me/${formatted}?text=${encodeURIComponent(message)}`, '_blank');
+      } else {
+        navigator.clipboard.writeText(message);
+        setCopiedId(c.id);
+        setTimeout(() => setCopiedId(null), 2500);
+        alert('Format pesan undangan WhatsApp berhasil disalin ke clipboard!');
+      }
+    }
+  };
+
   const handleCopyLink = (id: string) => {
-    const url = `https://proyekirfan.vercel.app/c/${id}`;
+    const url = getPortalUrl(id);
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
@@ -203,25 +242,44 @@ export default function ConsultantsPage() {
                   </div>
 
                   {/* Card Footer / Share */}
-                  <div className="p-4 border-t border-gray-800 bg-[#0a0c10] shrink-0 z-10">
+                  <div className="p-4 border-t border-gray-800 bg-[#0a0c10] shrink-0 z-10 space-y-2">
                     <button 
-                      onClick={() => handleCopyLink(c.id)}
-                      className={`w-full py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold transition-all ${
-                        copiedId === c.id 
-                          ? 'bg-green-500/20 text-green-500 border border-green-500/30' 
-                          : 'bg-accent-blue/10 text-accent-blue hover:bg-accent-blue/20 border border-accent-blue/20'
-                      }`}
+                      onClick={() => handleSendWhatsApp(c)}
+                      className="w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 transition-all active:scale-[0.98] shadow-sm shadow-emerald-500/10"
                     >
-                      {copiedId === c.id ? (
-                        <>
-                          <Check className="w-5 h-5" /> Tersalin!
-                        </>
-                      ) : (
-                        <>
-                          <Share2 className="w-5 h-5" /> Bagikan Bucket
-                        </>
-                      )}
+                      <MessageCircle className="w-4 h-4 text-emerald-400" /> Kirim ke WhatsApp
                     </button>
+                    
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleCopyLink(c.id)}
+                        className={`flex-1 py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs font-semibold transition-all ${
+                          copiedId === c.id 
+                            ? 'bg-green-500/20 text-green-400 border border-green-500/40' 
+                            : 'bg-gray-900 text-gray-300 hover:text-white hover:bg-gray-800 border border-gray-800'
+                        }`}
+                        title="Salin Link Portal"
+                      >
+                        {copiedId === c.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-green-400" /> Link Tersalin!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5 text-gray-400" /> Salin Link
+                          </>
+                        )}
+                      </button>
+
+                      <Link 
+                        href={`/c/${c.id}`}
+                        target="_blank"
+                        className="py-2.5 px-3 rounded-xl bg-gray-900 text-gray-400 hover:text-accent-blue hover:bg-gray-800 border border-gray-800 text-xs font-semibold flex items-center justify-center gap-1 transition-all"
+                        title="Buka Portal Konsultan"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" /> Buka
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, CheckCircle2, Circle, ExternalLink, MapPin, X, Save, Trash2, Copy, AlertCircle, Clock, CheckCircle, MessageCircle, UploadCloud, Loader2, Check, Map, ArrowRight, Eye, Calendar, Wallet, Link as LinkIcon, ArrowLeft, Upload, ShieldCheck, MapIcon, User, Phone, FileText, Users, ChevronDown } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, ExternalLink, MapPin, X, Save, Trash2, Copy, AlertCircle, Clock, CheckCircle, MessageCircle, UploadCloud, Loader2, Check, Map, ArrowRight, Eye, Calendar, Wallet, Link as LinkIcon, ArrowLeft, Upload, ShieldCheck, MapIcon, User, Phone, FileText, Users, ChevronDown, Bell, Search, Filter } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDocs, where, Timestamp, arrayUnion } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, getDocs, where, Timestamp, arrayUnion, limit } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Link from 'next/link';
@@ -61,6 +61,12 @@ export default function ProjectsPage() {
   const [consultants, setConsultants] = useState<any[]>([]);
   const [showConsultantDropdown, setShowConsultantDropdown] = useState(false);
 
+  // New Filters & Notifications State
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifModal, setShowNotifModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'unpaid' | 'paid' | 'nofiles'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const hasFiles = (project: any) => {
     const hasValidFiles = project.files && project.files.some((f: any) => f.url && f.url.trim() !== '' && f.url !== '#loading');
     return hasValidFiles || (project.link && project.link.trim() !== '');
@@ -86,7 +92,17 @@ export default function ProjectsPage() {
     };
     getConsultants();
 
-    return () => unsubscribe();
+    // Real-time Activity Logs (Consultant Read Receipts & Downloads)
+    const qNotif = query(collection(db, 'activity_logs'), orderBy('createdAt', 'desc'), limit(30));
+    const unsubNotif = onSnapshot(qNotif, (snapshot) => {
+      const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setNotifications(items);
+    });
+
+    return () => {
+      unsubscribe();
+      unsubNotif();
+    };
   }, []);
 
   const handleSave = async () => {
@@ -279,14 +295,35 @@ export default function ProjectsPage() {
     });
   };
 
+  const getBaseUrl = () => {
+    if (typeof window !== 'undefined' && window.location.origin) {
+      return window.location.origin;
+    }
+    return 'https://assistenku.vercel.app';
+  };
+
+  const formatPhoneNumber = (phone: string) => {
+    let cleaned = phone.replace(/[^0-9]/g, '');
+    if (cleaned.startsWith('0')) {
+      cleaned = '62' + cleaned.slice(1);
+    }
+    return cleaned;
+  };
+
   const handleShareWa = (project: any) => {
-    const publicUrl = `https://proyekirfan.vercel.app/p/${project.id}`;
-    const text = `Halo! Ini file untuk proyek *${project.title}*. Silakan diunduh/dilihat melalui link berikut ya:\n\n${publicUrl}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    const publicUrl = `${getBaseUrl()}/p/${project.id}`;
+    const text = `Halo! Berkas untuk proyek *${project.title}* sudah siap. Silakan diunduh atau dipratinjau melalui tautan berikut:\n\n👉 ${publicUrl}\n\nTerima kasih.`;
+    
+    if (project.consultantNumber && project.consultantNumber.trim() !== '') {
+      const targetPhone = formatPhoneNumber(project.consultantNumber);
+      window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`, '_blank');
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
   };
 
   const handleCopyLink = (project: any) => {
-    const publicUrl = `https://proyekirfan.vercel.app/p/${project.id}`;
+    const publicUrl = `${getBaseUrl()}/p/${project.id}`;
     navigator.clipboard.writeText(publicUrl);
     alert('Link portal proyek berhasil disalin ke clipboard!');
   };
@@ -355,34 +392,149 @@ export default function ProjectsPage() {
     }
   };
 
+  const unreadNotifs = notifications.filter(n => !n.isRead);
+
+  const handleMarkAllRead = async () => {
+    try {
+      const unreadList = notifications.filter(n => !n.isRead);
+      for (const item of unreadList) {
+        await updateDoc(doc(db, 'activity_logs', item.id), { isRead: true });
+      }
+    } catch (err) {
+      console.error('Failed to mark read:', err);
+    }
+  };
+
+  const filteredProjects = projects.filter(p => {
+    if (statusFilter === 'unpaid' && p.isPaid) return false;
+    if (statusFilter === 'paid' && !p.isPaid) return false;
+    if (statusFilter === 'nofiles' && hasFiles(p)) return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchTitle = p.title?.toLowerCase().includes(q);
+      const matchClient = p.client?.toLowerCase().includes(q);
+      const matchDocType = p.documentType?.toLowerCase().includes(q);
+      const matchCons = p.consultantName?.toLowerCase().includes(q);
+      const matchPem = p.pemrakarsa?.toLowerCase().includes(q);
+      return matchTitle || matchClient || matchDocType || matchCons || matchPem;
+    }
+    return true;
+  });
+
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="space-y-5 pb-24 animate-in fade-in duration-500">
       {!isEditing && (
-        <header className="flex justify-between items-center relative z-10">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
-              <Map className="w-6 h-6 text-accent-blue" />
-              Proyek
-            </h1>
-            <p className="text-sm text-gray-400">Kelola dan pantau seluruh proyek Anda.</p>
+        <div className="space-y-4 relative z-10">
+          <header className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
+                <Map className="w-6 h-6 text-accent-blue" />
+                Proyek
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-400">Kelola dan pantau seluruh berkas proyek Anda.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Activity Notification Bell */}
+              <button 
+                onClick={() => {
+                  setShowNotifModal(true);
+                  handleMarkAllRead();
+                }}
+                className="relative p-2.5 sm:p-3 bg-gray-900 border border-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors flex items-center justify-center shadow-lg active:scale-95"
+                title="Notifikasi Aktivitas Konsultan"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadNotifs.length > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center animate-pulse shadow-md shadow-red-500/50">
+                    {unreadNotifs.length > 9 ? '9+' : unreadNotifs.length}
+                  </span>
+                )}
+              </button>
+
+              <Link 
+                href="/consultants"
+                className="p-2.5 sm:p-3 bg-gray-900 border border-gray-800 rounded-xl text-gray-400 hover:text-accent-blue transition-colors flex items-center justify-center shadow-lg active:scale-95"
+                title="Kelola Konsultan"
+              >
+                <Users className="w-5 h-5" />
+              </Link>
+
+              <button 
+                onClick={() => openEditor()}
+                className="bg-accent-blue hover:bg-blue-600 text-white p-2.5 sm:p-3 rounded-xl shadow-lg shadow-blue-500/20 transition-transform active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline font-bold text-sm">Tambah Proyek</span>
+              </button>
+            </div>
+          </header>
+
+          {/* Quick Search Bar */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Cari nama proyek, konsultan, jenis dokumen..."
+              className="w-full bg-[#050608] border border-gray-800 text-gray-200 pl-11 pr-4 py-2.5 rounded-2xl text-xs sm:text-sm outline-none focus:border-accent-blue transition-colors placeholder:text-gray-500 shadow-inner"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
-          <div className="flex gap-2">
-            <Link 
-              href="/consultants"
-              className="p-3 bg-gray-900 border border-gray-800 rounded-xl text-gray-400 hover:text-accent-blue transition-colors flex items-center justify-center shadow-lg"
-              title="Kelola Konsultan"
-            >
-              <Users className="w-5 h-5" />
-            </Link>
+
+          {/* Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide text-xs font-semibold">
             <button 
-              onClick={() => openEditor()}
-              className="bg-accent-blue hover:bg-blue-600 text-white p-3 rounded-xl shadow-lg shadow-blue-500/20 transition-transform active:scale-95 flex items-center justify-center gap-2"
+              onClick={() => setStatusFilter('all')}
+              className={cn(
+                "px-3.5 py-1.5 rounded-xl transition-all whitespace-nowrap", 
+                statusFilter === 'all' 
+                  ? "bg-accent-blue text-white shadow-md shadow-blue-500/20" 
+                  : "bg-[#050608] border border-gray-800 text-gray-400 hover:text-white"
+              )}
             >
-              <Plus className="w-5 h-5" />
-              <span className="hidden sm:inline font-bold">Tambah Proyek</span>
+              Semua ({projects.length})
+            </button>
+            <button 
+              onClick={() => setStatusFilter('unpaid')}
+              className={cn(
+                "px-3.5 py-1.5 rounded-xl transition-all whitespace-nowrap", 
+                statusFilter === 'unpaid' 
+                  ? "bg-accent-orange text-white shadow-md shadow-orange-500/20" 
+                  : "bg-[#050608] border border-gray-800 text-gray-400 hover:text-white"
+              )}
+            >
+              Belum Lunas ({projects.filter(p => !p.isPaid).length})
+            </button>
+            <button 
+              onClick={() => setStatusFilter('nofiles')}
+              className={cn(
+                "px-3.5 py-1.5 rounded-xl transition-all whitespace-nowrap", 
+                statusFilter === 'nofiles' 
+                  ? "bg-red-500 text-white shadow-md shadow-red-500/20" 
+                  : "bg-[#050608] border border-gray-800 text-gray-400 hover:text-white"
+              )}
+            >
+              Perlu Berkas ({projects.filter(p => !hasFiles(p)).length})
+            </button>
+            <button 
+              onClick={() => setStatusFilter('paid')}
+              className={cn(
+                "px-3.5 py-1.5 rounded-xl transition-all whitespace-nowrap", 
+                statusFilter === 'paid' 
+                  ? "bg-neon text-darkbg font-bold shadow-md shadow-green-500/20" 
+                  : "bg-[#050608] border border-gray-800 text-gray-400 hover:text-white"
+              )}
+            >
+              Lunas ({projects.filter(p => p.isPaid).length})
             </button>
           </div>
-        </header>
+        </div>
       )}
 
       {isEditing ? (
@@ -691,31 +843,32 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <div className="grid gap-4 animate-in fade-in duration-300">
-          {projects.length === 0 && (
-          <div className="text-center py-12 border border-dashed border-gray-800 rounded-3xl">
-            <p className="text-gray-500">Belum ada proyek.</p>
+          {filteredProjects.length === 0 && (
+          <div className="text-center py-12 border border-dashed border-gray-800 rounded-3xl space-y-2">
+            <p className="text-gray-400 font-medium">Tidak ada proyek yang sesuai.</p>
+            <p className="text-xs text-gray-500">Coba ganti filter atau kata kunci pencarian Anda.</p>
           </div>
         )}
-        {projects.map((project) => (
+        {filteredProjects.map((project) => (
           <div key={project.id} className="bg-darkcard border border-gray-800 rounded-3xl p-5 hover:border-gray-700 transition-colors group">
             <div className="flex justify-between items-start mb-4">
               <div 
                 className="flex-1 cursor-pointer"
                 onClick={() => openEditor(project)}
               >
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   {/* Status Tag */}
                   {project.isPaid ? (
                     <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-neon/10 text-neon uppercase tracking-wider flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" /> Completed
+                      <CheckCircle className="w-3 h-3" /> Lunas
                     </span>
                   ) : hasFiles(project) ? (
                     <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-accent-blue/10 text-accent-blue uppercase tracking-wider flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> In Progress
+                      <MapPin className="w-3 h-3" /> Berkas Siap
                     </span>
                   ) : (
                     <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-accent-orange/10 text-accent-orange uppercase tracking-wider flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> Pending
+                      <Clock className="w-3 h-3" /> Perlu Berkas
                     </span>
                   )}
                   {project.documentType && (
@@ -729,12 +882,18 @@ export default function ProjectsPage() {
                     </span>
                   )}
                 </div>
-                <h3 className="font-bold text-xl text-gray-100 group-hover:text-accent-blue transition-colors">{project.title}</h3>
-                <div className="flex items-center text-sm text-gray-400 mt-1">
-                  <span className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-300 mr-2 border border-gray-700">
-                    {project.client ? project.client.charAt(0).toUpperCase() : '?'}
+                <h3 className="font-bold text-lg sm:text-xl text-gray-100 group-hover:text-accent-blue transition-colors">{project.title}</h3>
+                <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-400 mt-1.5">
+                  <span className="flex items-center gap-1 text-gray-300">
+                    <Calendar className="w-3.5 h-3.5 text-gray-500" />
+                    {project.client || 'Tanpa Tanggal'}
                   </span>
-                  {project.client || 'Tanpa Tanggal'}
+                  {project.consultantName && (
+                    <span className="flex items-center gap-1 text-gray-300">
+                      <Users className="w-3.5 h-3.5 text-accent-blue" />
+                      {project.consultantName}
+                    </span>
+                  )}
                 </div>
               </div>
               
@@ -754,7 +913,7 @@ export default function ProjectsPage() {
               <Link 
                 href={hasFiles(project) ? `/p/${project.id}` : '#'} 
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all",
+                  "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all",
                   hasFiles(project)
                     ? "bg-[#050608] border border-gray-700 hover:border-gray-600 text-gray-300 hover:text-white shadow-sm"
                     : "bg-[#050608] border border-transparent text-gray-600 cursor-not-allowed pointer-events-none"
@@ -785,6 +944,75 @@ export default function ProjectsPage() {
           </div>
         ))}
         </div>
+      )}
+
+      {/* Activity Notifications Modal */}
+      {showNotifModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#0E131F] border border-white/10 rounded-3xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-5 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-accent-blue" />
+                <h3 className="font-bold text-white text-base">Aktivitas & Notifikasi Konsultan</h3>
+              </div>
+              <button 
+                onClick={() => setShowNotifModal(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-white bg-white/5"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              {notifications.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                  <Bell className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Belum ada riwayat aktivitas.</p>
+                </div>
+              ) : (
+                notifications.map((n) => (
+                  <div 
+                    key={n.id}
+                    className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-white/10 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-xs font-bold text-accent-blue">{n.title || 'Aktivitas Baru'}</p>
+                      <span className="text-[10px] text-gray-500 shrink-0">
+                        {n.createdAt?.toMillis ? new Date(n.createdAt.toMillis()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Baru saja'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-200 mt-1 leading-relaxed">{n.message}</p>
+                    {n.consultantName && (
+                      <p className="text-[10px] text-gray-400 mt-2 flex items-center gap-1">
+                        <User className="w-3 h-3 text-gray-500" /> {n.consultantName}
+                      </p>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-4 border-t border-white/10 bg-[#0A0D15] flex justify-end">
+              <button 
+                onClick={() => setShowNotifModal(false)}
+                className="px-5 py-2.5 rounded-xl bg-accent-blue text-white text-xs font-bold hover:bg-blue-600 transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Floating Action Button (+) */}
+      {!isEditing && (
+        <button 
+          onClick={() => openEditor()}
+          className="md:hidden fixed right-5 bottom-20 z-40 w-14 h-14 rounded-full bg-accent-blue text-white shadow-xl shadow-blue-600/40 flex items-center justify-center active:scale-90 transition-transform"
+          title="Tambah Proyek Cepat"
+        >
+          <Plus className="w-7 h-7" />
+        </button>
       )}
     </div>
   );
